@@ -82,5 +82,23 @@
   },
   {
     "path": "tests/frontend/api.test.ts"
+  },
+  {
+    "path": "src/db/connection.py"
+  },
+  {
+    "path": "src/db/migrations.py"
+  },
+  {
+    "path": "src/db/models.py"
+  },
+  {
+    "path": "src/db/hierarchy.py"
+  },
+  {
+    "path": "tests/backend/test_database.py"
+  },
+  {
+    "path": "tests/backend/test_hierarchy.py"
   }
 ]

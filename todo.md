@@ -38,31 +38,31 @@ graph TD
 
 **Goal:** Implement the embedded SQLite persistence layer and Pydantic domain models to manage projects, documents, hierarchical nodes, CMS metadata schemas, and partitioned batch checkpoints.
 
-- [ ] **SQLite Database Engine:**
-  - [ ] Implement embedded SQLite connection factory initializing a project-specific `.sqlite` file on disk whenever a project is created or loaded.
-  - [ ] Create relational schema migration script executing DDL for core tables:
-    - [ ] `projects`: `id`, `name`, `llm_model`, `embedding_model`, `created_at`, `updated_at`.
-    - [ ] `documents`: `id` (UUIDv4), `project_id`, `filename`, `file_type`, `order_index`, `created_at`.
-    - [ ] `nodes`: `id` (UUIDv4), `document_id`, `parent_id` (nullable UUIDv4), `node_type` (`header` | `paragraph`), `text_content`, `order_index`, `embedding_status` (`current` | `stale` | `missing`).
-    - [ ] `node_embeddings`: `node_id` (UUIDv4 foreign key), `embedding_blob` (float32 BLOB), `updated_at`.
-    - [ ] `schema_fields`: `id` (UUIDv4), `project_id`, `field_slug`, `field_label`, `field_type`, `description`, `is_required`, `order_index`.
-    - [ ] `node_metadata`: `id` (integer autoincrement), `node_id` (UUIDv4), `field_id` (UUIDv4), `field_value` (serialized JSON text), `user_edited` (boolean).
-    - [ ] `batch_checkpoints`: `id`, `job_type` (`metadata` | `embedding`), `completed_partition`, `total_partitions`, `status`, `last_error`, `updated_at`.
-  - [ ] Add indexes on `nodes(document_id, order_index)`, `nodes(parent_id)`, `node_metadata(node_id, field_id)`, and `schema_fields(project_id)`.
-- [ ] **Domain Models & Pydantic Validation:**
-  - [ ] Define strict Pydantic v2 schemas for all entities (`Project`, `Document`, `Node`, `SchemaField`, `NodeMetadata`, `BatchCheckpoint`).
-  - [ ] Implement dynamic JSON Schema generator function compiling active `schema_fields` records into a standard JSON Schema draft payload for structured LLM extraction.
-- [ ] **Hierarchy & Ordering Data Utilities:**
-  - [ ] Implement recursive CTE query resolving parent hierarchy breadcrumbs (`Doc Title > Header > Subheader > Chunk`) traversing `parent_id` up to the root with a `depth < 50` cycle prevention guard, terminating when `parent_id IS NULL`, and joining the `documents` table via `nodes.document_id` to retrieve and prepend the root document title.
-  - [ ] Implement application-level tree integrity validator ensuring hierarchy mutations are acyclic prior to committing parent updates.
-  - [ ] Implement transactional sequence shift utility guaranteeing contiguous, non-negative `order_index` sequences within a document upon insertions, splits, or deletions.
-  - [ ] Implement cascade logic setting `embedding_status = 'stale'` on descendant chunks whenever a header's text or parent link is updated.
-- [ ] **Unit Tests for Data Layer:**
-  - [ ] Write tests verifying UUID generation and persistence across SQLite transaction commits.
-  - [ ] Write tests verifying `order_index` densification during node insertions and deletions.
-  - [ ] Write tests verifying recursive CTE breadcrumb assembly with document title prepending, and cycle prevention depth termination under circular parent assignments.
-  - [ ] Write tests asserting that renaming or reordering `schema_fields` preserves chunk associations via immutable `field_id`.
-  - [ ] Execute `go t` to verify data layer tests pass.
+- [x] **SQLite Database Engine:**
+  - [x] Implement embedded SQLite connection factory initializing a project-specific `.sqlite` file on disk whenever a project is created or loaded.
+  - [x] Create relational schema migration script executing DDL for core tables:
+    - [x] `projects`: `id`, `name`, `llm_model`, `embedding_model`, `created_at`, `updated_at`.
+    - [x] `documents`: `id` (UUIDv4), `project_id`, `filename`, `file_type`, `order_index`, `created_at`.
+    - [x] `nodes`: `id` (UUIDv4), `document_id`, `parent_id` (nullable UUIDv4), `node_type` (`header` | `paragraph`), `text_content`, `order_index`, `embedding_status` (`current` | `stale` | `missing`).
+    - [x] `node_embeddings`: `node_id` (UUIDv4 foreign key), `embedding_blob` (float32 BLOB), `updated_at`.
+    - [x] `schema_fields`: `id` (UUIDv4), `project_id`, `field_slug`, `field_label`, `field_type`, `description`, `is_required`, `order_index`.
+    - [x] `node_metadata`: `id` (integer autoincrement), `node_id` (UUIDv4), `field_id` (UUIDv4), `field_value` (serialized JSON text), `user_edited` (boolean).
+    - [x] `batch_checkpoints`: `id`, `job_type` (`metadata` | `embedding`), `completed_partition`, `total_partitions`, `status`, `last_error`, `updated_at`.
+  - [x] Add indexes on `nodes(document_id, order_index)`, `nodes(parent_id)`, `node_metadata(node_id, field_id)`, and `schema_fields(project_id)`.
+- [x] **Domain Models & Pydantic Validation:**
+  - [x] Define strict Pydantic v2 schemas for all entities (`Project`, `Document`, `Node`, `SchemaField`, `NodeMetadata`, `BatchCheckpoint`).
+  - [x] Implement dynamic JSON Schema generator function compiling active `schema_fields` records into a standard JSON Schema draft payload for structured LLM extraction.
+- [x] **Hierarchy & Ordering Data Utilities:**
+  - [x] Implement recursive CTE query resolving parent hierarchy breadcrumbs (`Doc Title > Header > Subheader > Chunk`) traversing `parent_id` up to the root with a `depth < 50` cycle prevention guard, terminating when `parent_id IS NULL`, and joining the `documents` table via `nodes.document_id` to retrieve and prepend the root document title.
+  - [x] Implement application-level tree integrity validator ensuring hierarchy mutations are acyclic prior to committing parent updates.
+  - [x] Implement transactional sequence shift utility guaranteeing contiguous, non-negative `order_index` sequences within a document upon insertions, splits, or deletions.
+  - [x] Implement cascade logic setting `embedding_status = 'stale'` on descendant chunks whenever a header's text or parent link is updated.
+- [x] **Unit Tests for Data Layer:**
+  - [x] Write tests verifying UUID generation and persistence across SQLite transaction commits.
+  - [x] Write tests verifying `order_index` densification during node insertions and deletions.
+  - [x] Write tests verifying recursive CTE breadcrumb assembly with document title prepending, and cycle prevention depth termination under circular parent assignments.
+  - [x] Write tests asserting that renaming or reordering `schema_fields` preserves chunk associations via immutable `field_id`.
+  - [x] Execute `go t` to verify data layer tests pass.
 
 ## Document Ingestion & Hierarchy Management
 
