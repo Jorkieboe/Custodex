@@ -1,0 +1,50 @@
+[
+  {
+    "path": "go.bat"
+  },
+  {
+    "path": "README.md"
+  },
+  {
+    "path": "requirements.txt"
+  },
+  {
+    "path": "pytest.ini"
+  },
+  {
+    "path": "tests/test_smoke.py"
+  },
+  {
+    "path": "package.json"
+  },
+  {
+    "path": "vite.config.ts"
+  },
+  {
+    "path": "vitest.config.ts"
+  },
+  {
+    "path": "tsconfig.json"
+  },
+  {
+    "path": "tests/frontend/smoke.test.ts"
+  },
+  {
+    "path": "config.json"
+  },
+  {
+    "path": "llm.md"
+  },
+  {
+    "path": "version.txt"
+  },
+  {
+    "path": "concept.md"
+  },
+  {
+    "path": "architecture.md"
+  },
+  {
+    "path": "todo.md"
+  }
+]

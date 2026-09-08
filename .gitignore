@@ -1,0 +1,52 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Node
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.faiss
+
+# Test artifacts
+.pytest_cache/
+coverage/
+
+# Environment variables
+.env
+.env.*.local
+
+# Build artifacts
+build/
+*.spec
+
+# CodeMerger
+/project_starter.json
+
+# Personal preference
+/2do.txt
+
+# CodeMerger & Environment
+/project_starter_session.json
+project-starter.json
+.env.*
+*.env

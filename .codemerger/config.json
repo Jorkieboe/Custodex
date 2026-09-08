@@ -1,0 +1,24 @@
+{
+  "project_name": "Custodex",
+  "project_color": "#0D9488",
+  "project_font_color": "light",
+  "active_profile": "default",
+  "known_files": [
+    "README.md",
+    "architecture.md",
+    "concept.md",
+    "config.json",
+    "go.bat",
+    "llm.md",
+    "package.json",
+    "pytest.ini",
+    "requirements.txt",
+    "tests/frontend/smoke.test.ts",
+    "tests/test_smoke.py",
+    "todo.md",
+    "tsconfig.json",
+    "version.txt",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
+}

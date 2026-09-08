@@ -1,0 +1,6 @@
+{
+  "default_llm_model": "local-model",
+  "default_embedding_model": "text-embedding-nomic-embed-text-v1.5",
+  "lm_studio_endpoint": "http://localhost:1234/v1",
+  "recent_projects": []
+}
