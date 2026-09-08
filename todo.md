@@ -12,27 +12,27 @@ graph TD
     E --> F
 ```
 
-- [ ] **Backend Environment Setup (UV-Powered):**
-  - [ ] Initialize Python 3.11+ project and virtual environment via UV (`uv venv --python 3.11`).
-  - [ ] Configure `pyproject.toml` and install core backend dependencies using `uv add`: `fastapi`, `uvicorn`, `pydantic>=2.0`, `openai`, `faiss-cpu`, `langchain-text-splitters`, `python-docx`, `pytest`, `httpx`.
-  - [ ] Create global application config file `config.json` storing `default_llm_model`, `default_embedding_model`, and `lm_studio_endpoint` (defaulting to `http://localhost:1234/v1`).
-  - [ ] Implement baseline FastAPI application entry point with CORS middleware allowing local Vite dev requests.
-  - [ ] Implement health and provider status endpoint (`GET /api/status`) verifying local API liveness and checking connectivity to the LM Studio endpoint.
-- [ ] **Frontend Environment Setup:**
-  - [ ] Initialize Vite application with Vue 3, TypeScript, Pinia, and SCSS preprocessor.
-  - [ ] Install client dependencies: `@tiptap/vue-3`, `@tiptap/pm`, `@tiptap/starter-kit`, `lucide-vue-next`, `axios`.
-  - [ ] Establish centralized HTTP client configured with local base URL (`http://localhost:8000`).
-  - [ ] Configure SCSS design tokens (color variables, status indicators for `current`, `stale`, and `missing` states, font families, and modal layouts).
-- [ ] **Unit Testing & Test Runner Configuration:**
-  - [ ] Configure Pytest in `pytest.ini` with test discovery under `tests/backend/` and setup in-memory SQLite fixtures.
-  - [ ] Configure Vitest in `vitest.config.ts` with `happy-dom` environment for component and store testing under `tests/frontend/`.
-  - [ ] Create consolidated test execution script `go t` that triggers `uv run pytest` and `npm run test:unit` sequentially.
-  - [ ] Implement initial smoke tests in both suites to verify test runner operation.
-- [ ] **Testing Point 1: Verify Core Connection & Automated Test Runner**
-  - [ ] Start backend server via `uv run uvicorn main:app --reload` on port 8000.
-  - [ ] Start frontend server via `npm run dev` on port 5173.
-  - [ ] Verify the frontend successfully queries `/api/status` and displays the backend connectivity status.
-  - [ ] Execute `go t` and confirm both Pytest and Vitest runners execute cleanly with all baseline assertions passing.
+- [x] **Backend Environment Setup (UV-Powered):**
+  - [x] Initialize Python 3.11+ project and virtual environment via UV (`uv venv --python 3.11`).
+  - [x] Configure `pyproject.toml` and install core backend dependencies using `uv add`: `fastapi`, `uvicorn`, `pydantic>=2.0`, `openai`, `faiss-cpu`, `langchain-text-splitters`, `python-docx`, `pytest`, `httpx`.
+  - [x] Create global application config file `config.json` storing `default_llm_model`, `default_embedding_model`, and `lm_studio_endpoint` (defaulting to `http://localhost:1234/v1`).
+  - [x] Implement baseline FastAPI application entry point with CORS middleware allowing local Vite dev requests.
+  - [x] Implement health and provider status endpoint (`GET /api/status`) verifying local API liveness and checking connectivity to the LM Studio endpoint.
+- [x] **Frontend Environment Setup:**
+  - [x] Initialize Vite application with Vue 3, TypeScript, Pinia, and SCSS preprocessor.
+  - [x] Install client dependencies: `@tiptap/vue-3`, `@tiptap/pm`, `@tiptap/starter-kit`, `lucide-vue-next`, `axios`.
+  - [x] Establish centralized HTTP client configured with local base URL (`http://localhost:8000`).
+  - [x] Configure SCSS design tokens (color variables, status indicators for `current`, `stale`, and `missing` states, font families, and modal layouts).
+- [x] **Unit Testing & Test Runner Configuration:**
+  - [x] Configure Pytest in `pytest.ini` with test discovery under `tests/backend/` and setup in-memory SQLite fixtures.
+  - [x] Configure Vitest in `vitest.config.ts` with `happy-dom` environment for component and store testing under `tests/frontend/`.
+  - [x] Create consolidated test execution script `go t` that triggers `uv run pytest` and `npm run test:unit` sequentially.
+  - [x] Implement initial smoke tests in both suites to verify test runner operation.
+- [x] **Testing Point 1: Verify Core Connection & Automated Test Runner**
+  - [x] Start backend server via `uv run uvicorn main:app --reload` on port 8000.
+  - [x] Start frontend server via `npm run dev` on port 5173.
+  - [x] Verify the frontend successfully queries `/api/status` and displays the backend connectivity status.
+  - [x] Execute `go t` and confirm both Pytest and Vitest runners execute cleanly with all baseline assertions passing.
 
 ## Database & Schema
 

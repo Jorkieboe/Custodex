@@ -46,5 +46,41 @@
   },
   {
     "path": "todo.md"
+  },
+  {
+    "path": "pyproject.toml"
+  },
+  {
+    "path": "src/__init__.py"
+  },
+  {
+    "path": "src/config.py"
+  },
+  {
+    "path": "src/main.py"
+  },
+  {
+    "path": "tests/backend/test_api_status.py"
+  },
+  {
+    "path": "src/styles/variables.scss"
+  },
+  {
+    "path": "src/styles/main.scss"
+  },
+  {
+    "path": "src/services/api.ts"
+  },
+  {
+    "path": "index.html"
+  },
+  {
+    "path": "src/main.ts"
+  },
+  {
+    "path": "src/App.vue"
+  },
+  {
+    "path": "tests/frontend/api.test.ts"
   }
 ]
