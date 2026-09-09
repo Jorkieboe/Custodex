@@ -5,6 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from src.config import load_config
+from src.routers.documents import router as documents_router
+from src.routers.nodes import router as nodes_router
+from src.routers.projects import router as projects_router
 
 app = FastAPI(
     title="Custodex API",
@@ -19,6 +22,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(projects_router)
+app.include_router(documents_router)
+app.include_router(nodes_router)
 
 class StatusResponse(BaseModel):
     status: str

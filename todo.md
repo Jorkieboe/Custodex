@@ -68,43 +68,43 @@ graph TD
 
 **Goal:** Implement multi-document import pipelines and API endpoints that parse raw files into structured AST hierarchies linked by UUIDv4 identifiers, parent pointers, and order indices.
 
-- [ ] **Document Parsers:**
-  - [ ] Implement DOCX structural parser using `python-docx`:
-    - [ ] Walk paragraphs and headings, extracting heading levels (`Heading 1`, `Heading 2`, `Heading 3`).
-    - [ ] Map heading levels to hierarchical nodes with appropriate `parent_id` references.
-    - [ ] Group succeeding regular paragraphs as `paragraph` nodes linked to their immediate header's UUID.
-  - [ ] Implement fallback text parsers for Markdown (parsing `#` heading levels), plain text (`.txt`), and PDF fallback text.
-  - [ ] Assign deterministic sequential `order_index` values and immutable random UUIDv4 strings to all parsed document, header, and chunk entities.
-- [ ] **Ingestion Endpoints:**
-  - [ ] Implement `POST /api/projects/{id}/documents/upload` supporting multi-file uploads (DOCX, PDF, MD, TXT).
-  - [ ] Implement `GET /api/projects/{id}/documents` returning all imported documents with node counts and embedding readiness states.
-  - [ ] Implement `DELETE /api/projects/{id}/documents/{doc_id}` cleaning up associated nodes, embeddings, and metadata within an atomic transaction.
-  - [ ] Implement `PATCH /api/projects/{id}/documents/reorder` to adjust document sequences without altering internal node ordering.
-- [ ] **Hierarchy Mutation Operations:**
-  - [ ] Enforce acyclic verification guard across all parent pointer reassignments to prevent circular hierarchy references before committing.
-  - [ ] Implement `POST /api/projects/{id}/nodes/{node_id}/split`:
-    - [ ] Retain original UUID, `parent_id`, and `order_index` on the primary/upper slice.
-    - [ ] Allocate fresh UUIDv4, set `order_index = original + 1`, and inherit `parent_id` on the child slice.
-    - [ ] Atomically increment `order_index` for all downstream nodes in the document.
-    - [ ] Mark new child chunk with `embedding_status = 'missing'`.
-  - [ ] Implement `POST /api/projects/{id}/nodes/{node_id}/merge`:
-    - [ ] Merge specified chunk with its immediate successor.
-    - [ ] Retain leading chunk's UUID, `parent_id`, and `order_index`.
-    - [ ] Decrement downstream `order_index` values across the document.
-    - [ ] Combine metadata fields: keep identical scalar values, flag conflicting scalar values for review, merge and deduplicate list fields.
-  - [ ] Implement `POST /api/projects/{id}/nodes/{node_id}/promote`:
-    - [ ] Toggle node type from `paragraph` to `header`.
-    - [ ] Dynamically update `parent_id` of subsequent sibling chunks to reference the promoted header.
-    - [ ] Cascade `embedding_status = 'stale'` across all newly associated children.
-  - [ ] Implement `POST /api/projects/{id}/nodes/detach-selection`:
-    - [ ] Detach selected substring within a chunk into a brand new standalone header node.
-    - [ ] Split preceding and succeeding text into discrete chunks with recomputed consecutive `order_index` values.
-- [ ] **Unit Tests for Ingestion & Mutations:**
-  - [ ] Write unit tests verifying DOCX parsing yields correct nested parent-child relationships.
-  - [ ] Write tests asserting manual split rules maintain downstream index continuity.
-  - [ ] Write tests verifying merge rules combine metadata lists and flag scalar conflicts.
-  - [ ] Write tests asserting acyclic checks reject mutations creating circular parent references.
-  - [ ] Execute `go t` to verify ingestion test suite passes.
+- [x] **Document Parsers:**
+  - [x] Implement DOCX structural parser using `python-docx`:
+    - [x] Walk paragraphs and headings, extracting heading levels (`Heading 1`, `Heading 2`, `Heading 3`).
+    - [x] Map heading levels to hierarchical nodes with appropriate `parent_id` references.
+    - [x] Group succeeding regular paragraphs as `paragraph` nodes linked to their immediate header's UUID.
+  - [x] Implement fallback text parsers for Markdown (parsing `#` heading levels), plain text (`.txt`), and PDF fallback text.
+  - [x] Assign deterministic sequential `order_index` values and immutable random UUIDv4 strings to all parsed document, header, and chunk entities.
+- [x] **Ingestion Endpoints:**
+  - [x] Implement `POST /api/projects/{id}/documents/upload` supporting multi-file uploads (DOCX, PDF, MD, TXT).
+  - [x] Implement `GET /api/projects/{id}/documents` returning all imported documents with node counts and embedding readiness states.
+  - [x] Implement `DELETE /api/projects/{id}/documents/{doc_id}` cleaning up associated nodes, embeddings, and metadata within an atomic transaction.
+  - [x] Implement `PATCH /api/projects/{id}/documents/reorder` to adjust document sequences without altering internal node ordering.
+- [x] **Hierarchy Mutation Operations:**
+  - [x] Enforce acyclic verification guard across all parent pointer reassignments to prevent circular hierarchy references before committing.
+  - [x] Implement `POST /api/projects/{id}/nodes/{node_id}/split`:
+    - [x] Retain original UUID, `parent_id`, and `order_index` on the primary/upper slice.
+    - [x] Allocate fresh UUIDv4, set `order_index = original + 1`, and inherit `parent_id` on the child slice.
+    - [x] Atomically increment `order_index` for all downstream nodes in the document.
+    - [x] Mark new child chunk with `embedding_status = 'missing'`.
+  - [x] Implement `POST /api/projects/{id}/nodes/{node_id}/merge`:
+    - [x] Merge specified chunk with its immediate successor.
+    - [x] Retain leading chunk's UUID, `parent_id`, and `order_index`.
+    - [x] Decrement downstream `order_index` values across the document.
+    - [x] Combine metadata fields: keep identical scalar values, flag conflicting scalar values for review, merge and deduplicate list fields.
+  - [x] Implement `POST /api/projects/{id}/nodes/{node_id}/promote`:
+    - [x] Toggle node type from `paragraph` to `header`.
+    - [x] Dynamically update `parent_id` of subsequent sibling chunks to reference the promoted header.
+    - [x] Cascade `embedding_status = 'stale'` across all newly associated children.
+  - [x] Implement `POST /api/projects/{id}/nodes/detach-selection`:
+    - [x] Detach selected substring within a chunk into a brand new standalone header node.
+    - [x] Split preceding and succeeding text into discrete chunks with recomputed consecutive `order_index` values.
+- [x] **Unit Tests for Ingestion & Mutations:**
+  - [x] Write unit tests verifying DOCX parsing yields correct nested parent-child relationships.
+  - [x] Write tests asserting manual split rules maintain downstream index continuity.
+  - [x] Write tests verifying merge rules combine metadata lists and flag scalar conflicts.
+  - [x] Write tests asserting acyclic checks reject mutations creating circular parent references.
+  - [x] Execute `go t` to verify ingestion test suite passes.
 
 ## Interactive Visual Canvas & Frontend Workspace
 

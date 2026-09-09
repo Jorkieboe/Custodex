@@ -100,5 +100,35 @@
   },
   {
     "path": "tests/backend/test_hierarchy.py"
+  },
+  {
+    "path": "src/parsers/__init__.py"
+  },
+  {
+    "path": "src/parsers/docx_parser.py"
+  },
+  {
+    "path": "src/parsers/pdf_parser.py"
+  },
+  {
+    "path": "src/parsers/text_parser.py"
+  },
+  {
+    "path": "src/routers/nodes.py"
+  },
+  {
+    "path": "src/routers/projects.py"
+  },
+  {
+    "path": "src/services/hierarchy_service.py"
+  },
+  {
+    "path": "src/routers/documents.py"
+  },
+  {
+    "path": "src/services/project_manager.py"
+  },
+  {
+    "path": "tests/backend/test_ingestion_and_mutations.py"
   }
 ]
