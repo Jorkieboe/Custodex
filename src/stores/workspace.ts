@@ -4,7 +4,13 @@ import {
   type Project,
   type DocumentSummary,
   type NodeItem,
+  type SchemaField,
   fetchProjectById,
+  fetchProjectSchema,
+  createSchemaField,
+  updateSchemaField,
+  deleteSchemaField,
+  replaceAllSchemaFields,
   fetchProjectDocuments,
   fetchProjectNodes,
   uploadProjectDocuments,
@@ -23,6 +29,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const currentProject = ref<Project | null>(null)
   const documents = ref<DocumentSummary[]>([])
   const nodes = ref<NodeItem[]>([])
+  const schemaFields = ref<SchemaField[]>([])
   const selectedNodeIds = ref<Set<string>>(new Set())
   const currentStep = ref<WorkspaceStep>('chunks')
   const isLoading = ref<boolean>(false)
@@ -48,6 +55,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       currentProject.value = proj
       await reloadDocuments()
       await reloadNodes()
+      await reloadSchema()
     } catch (err: any) {
       errorMessage.value = err.message || 'Failed to load project'
       throw err
@@ -245,6 +253,48 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     promoteNode,
     demoteNode,
     detachSelection,
-    reloadNodes
+    reloadNodes,
+    schemaFields,
+    reloadSchema,
+    addSchemaField,
+    modifySchemaField,
+    removeSchemaField,
+    reorderSchemaFields
+  }
+
+  async function reloadSchema() {
+    if (!currentProject.value) return
+    const fields = await fetchProjectSchema(currentProject.value.id)
+    schemaFields.value = fields
+  }
+
+  async function addSchemaField(payload: Partial<SchemaField>) {
+    if (!currentProject.value) return
+    const created = await createSchemaField(currentProject.value.id, payload)
+    schemaFields.value.push(created)
+    return created
+  }
+
+  async function modifySchemaField(fieldId: string, payload: Partial<SchemaField>) {
+    if (!currentProject.value) return
+    const updated = await updateSchemaField(currentProject.value.id, fieldId, payload)
+    const idx = schemaFields.value.findIndex((f) => f.id === fieldId)
+    if (idx !== -1) {
+      schemaFields.value[idx] = updated
+    }
+    return updated
+  }
+
+  async function removeSchemaField(fieldId: string) {
+    if (!currentProject.value) return
+    await deleteSchemaField(currentProject.value.id, fieldId)
+    schemaFields.value = schemaFields.value.filter((f) => f.id !== fieldId)
+  }
+
+  async function reorderSchemaFields(newFields: SchemaField[]) {
+    if (!currentProject.value) return
+    schemaFields.value = [...newFields]
+    const updated = await replaceAllSchemaFields(currentProject.value.id, newFields)
+    schemaFields.value = updated
   }
 })

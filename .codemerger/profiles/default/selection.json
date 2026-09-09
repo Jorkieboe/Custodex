@@ -160,5 +160,20 @@
   },
   {
     "path": "tests/frontend/workspace.test.ts"
+  },
+  {
+    "path": "src/routers/schema.py"
+  },
+  {
+    "path": "tests/backend/test_schema.py"
+  },
+  {
+    "path": "src/components/schema/FieldCard.vue"
+  },
+  {
+    "path": "src/components/schema/SchemaDesigner.vue"
+  },
+  {
+    "path": "tests/frontend/schema.test.ts"
   }
 ]

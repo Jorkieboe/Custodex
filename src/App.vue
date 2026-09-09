@@ -5,6 +5,7 @@ import ProjectHub from './components/ProjectHub.vue'
 import StepNavigator from './components/StepNavigator.vue'
 import IngestionView from './components/IngestionView.vue'
 import ChunkCanvas from './components/canvas/ChunkCanvas.vue'
+import SchemaDesigner from './components/schema/SchemaDesigner.vue'
 import SettingsModal from './components/SettingsModal.vue'
 
 const store = useWorkspaceStore()
@@ -43,16 +44,8 @@ function handleBackToHub() {
         <!-- Step 2: Chunk Canvas -->
         <ChunkCanvas v-else-if="store.currentStep === 'chunks'" />
 
-        <!-- Step 3: Schema Designer Placeholder -->
-        <div v-else-if="store.currentStep === 'schema'" class="step-placeholder">
-          <div class="placeholder-card">
-            <h2>CMS Metadata Schema Designer</h2>
-            <p>Visual collection builder will configure structured metadata attributes.</p>
-            <button class="btn btn-primary" @click="store.setStep('chunks')">
-              Return to Chunk Canvas
-            </button>
-          </div>
-        </div>
+        <!-- Step 3: Schema Designer -->
+        <SchemaDesigner v-else-if="store.currentStep === 'schema'" />
 
         <!-- Step 4: Metadata Extraction Placeholder -->
         <div v-else-if="store.currentStep === 'metadata'" class="step-placeholder">

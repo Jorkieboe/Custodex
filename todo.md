@@ -149,11 +149,11 @@ graph TD
 
 **Goal:** Build the CMS-style collection builder interface and implement partitioned, fault-tolerant batch metadata extraction via local LM Studio completions.
 
-- [ ] **CMS-Style Schema Designer UI:**
-  - [ ] Build visual schema canvas with field palette supporting types: `string`, `number`, `boolean`, `array[string]`, `array[number]`, `date`.
-  - [ ] Implement editable Field Card component displaying field label, auto-generated slug, type icon, required toggle, and prompt description textarea.
-  - [ ] Ensure every field is bound to an immutable `field_id` (UUIDv4) so renames or reorders do not break existing chunk bindings.
-  - [ ] Implement schema persistence endpoints (`GET/POST/PUT /api/projects/{id}/schema`).
+- [x] **CMS-Style Schema Designer UI:**
+  - [x] Build visual schema canvas with field palette supporting types: `string`, `number`, `boolean`, `array[string]`, `array[number]`, `date`.
+  - [x] Implement editable Field Card component displaying field label, auto-generated slug, type icon, required toggle, and prompt description textarea.
+  - [x] Ensure every field is bound to an immutable `field_id` (UUIDv4) so renames or reorders do not break existing chunk bindings.
+  - [x] Implement schema persistence endpoints (`GET/POST/PUT /api/projects/{id}/schema`).
 - [ ] **Partitioned Batch Extraction Engine:**
   - [ ] Implement metadata batch partitioner dividing eligible chunks into configurable batches of N chunks (e.g., N=10) editing in config.
   - [ ] Implement LLM prompt builder transforming active `schema_fields` into a strict JSON Schema and assembling chunk context (`Document Title > Headers > Chunk Body`).

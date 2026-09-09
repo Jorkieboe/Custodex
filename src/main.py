@@ -9,6 +9,7 @@ from src.routers.config import router as config_router
 from src.routers.documents import router as documents_router
 from src.routers.nodes import router as nodes_router
 from src.routers.projects import router as projects_router
+from src.routers.schema import router as schema_router
 
 app = FastAPI(
     title="Custodex API",
@@ -28,6 +29,7 @@ app.include_router(config_router)
 app.include_router(projects_router)
 app.include_router(documents_router)
 app.include_router(nodes_router)
+app.include_router(schema_router)
 
 class StatusResponse(BaseModel):
     status: str
