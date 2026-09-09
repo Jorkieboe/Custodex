@@ -4,9 +4,9 @@ from typing import List
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
-from src.db.models import DocumentModel, NodeModel, generate_uuid
-from src.parsers import parse_document_file
-from src.services.project_manager import get_project_connection, ensure_project_record
+from backend.db.models import DocumentModel, NodeModel, generate_uuid
+from backend.parsers import parse_document_file
+from backend.services.project_manager import get_project_connection, ensure_project_record
 
 router = APIRouter(prefix="/api/projects/{project_id}/documents", tags=["documents"])
 

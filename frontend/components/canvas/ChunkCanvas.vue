@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { type NodeItem } from '../../services/api'
 import { useWorkspaceStore } from '../../stores/workspace'
 import HeaderNodeView from './HeaderNodeView.vue'
 import ChunkNodeView from './ChunkNodeView.vue'
 
 const store = useWorkspaceStore()
 
-// Floating selection toolbar state
 const floatingToolbarVisible = ref(false)
 const floatingToolbarPos = ref({ x: 0, y: 0 })
 const activeSelection = ref<{
@@ -16,7 +16,6 @@ const activeSelection = ref<{
   end: number
 } | null>(null)
 
-// Calculate child counts per header node
 const headerChildCounts = computed(() => {
   const counts: Record<string, number> = {}
   for (const node of store.nodes) {
@@ -55,7 +54,7 @@ async function handleMakeHeader() {
 async function handleSplitFromSelection() {
   if (!activeSelection.value) return
   const { nodeId, start } = activeSelection.value
-  const targetNode = store.nodes.find((n) => n.id === nodeId)
+  const targetNode = store.nodes.find((n: NodeItem) => n.id === nodeId)
   if (!targetNode) return
   const top = targetNode.text_content.slice(0, start).trim()
   const bottom = targetNode.text_content.slice(start).trim()
@@ -128,7 +127,7 @@ function canMerge(index: number): boolean {
     </div>
 
     <!-- Floating Text Selection Toolbar -->
-    <!-- <div
+    <div
       v-if="floatingToolbarVisible"
       class="floating-selection-toolbar"
       :style="{ top: `${floatingToolbarPos.y}px`, left: `${floatingToolbarPos.x}px` }"
@@ -140,7 +139,7 @@ function canMerge(index: number): boolean {
       <button class="float-btn" @click="handleSplitFromSelection">
         ✂ Split Chunk Here
       </button>
-    </div> -->
+    </div>
   </div>
 </template>
 

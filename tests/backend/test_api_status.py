@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock
 import httpx
 
-from src.main import app
+from backend.main import app
 
 client = TestClient(app)
 

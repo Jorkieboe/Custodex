@@ -1,9 +1,9 @@
 import sqlite3
 from pathlib import Path
 from typing import Dict, Optional
-from src.db.connection import get_connection
-from src.db.migrations import init_db
-from src.db.models import ProjectModel
+from backend.db.connection import get_connection
+from backend.db.migrations import init_db
+from backend.db.models import ProjectModel
 
 BASE_PROJECTS_DIR = Path(__file__).resolve().parent.parent.parent / "projects"
 

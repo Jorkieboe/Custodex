@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-
 from typing import List
-from src.config import load_config, save_config
-from src.db.models import ProjectModel, generate_uuid
-from src.services.project_manager import ensure_project_record, get_project_connection
+
+from backend.config import load_config, save_config
+from backend.db.models import ProjectModel, generate_uuid
+from backend.services.project_manager import ensure_project_record, get_project_connection
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 

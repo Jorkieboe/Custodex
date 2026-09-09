@@ -99,7 +99,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   async function updateNode(nodeId: string, newText: string) {
     if (!currentProject.value) return
-    const target = nodes.value.find((n) => n.id === nodeId)
+    const target = nodes.value.find((n: NodeItem) => n.id === nodeId)
     if (target) {
       target.text_content = newText
       if (target.embedding_status === 'current') {
@@ -108,7 +108,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
     try {
       const updated = await updateProjectNode(currentProject.value.id, nodeId, newText)
-      const idx = nodes.value.findIndex((n) => n.id === nodeId)
+      const idx = nodes.value.findIndex((n: NodeItem) => n.id === nodeId)
       if (idx !== -1) {
         nodes.value[idx] = updated
       }
@@ -132,7 +132,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   function selectAllNodes() {
-    selectedNodeIds.value = new Set(nodes.value.map((n) => n.id))
+    selectedNodeIds.value = new Set(nodes.value.map((n: NodeItem) => n.id))
   }
 
   function clearNodeSelection() {
@@ -142,7 +142,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function splitNode(nodeId: string, topText: string, bottomText: string) {
     if (!currentProject.value) return
     const originalNodes = [...nodes.value]
-    const targetIdx = nodes.value.findIndex((n) => n.id === nodeId)
+    const targetIdx = nodes.value.findIndex((n: NodeItem) => n.id === nodeId)
     if (targetIdx === -1) return
 
     try {
@@ -278,7 +278,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function modifySchemaField(fieldId: string, payload: Partial<SchemaField>) {
     if (!currentProject.value) return
     const updated = await updateSchemaField(currentProject.value.id, fieldId, payload)
-    const idx = schemaFields.value.findIndex((f) => f.id === fieldId)
+    const idx = schemaFields.value.findIndex((f: SchemaField) => f.id === fieldId)
     if (idx !== -1) {
       schemaFields.value[idx] = updated
     }
@@ -288,7 +288,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function removeSchemaField(fieldId: string) {
     if (!currentProject.value) return
     await deleteSchemaField(currentProject.value.id, fieldId)
-    schemaFields.value = schemaFields.value.filter((f) => f.id !== fieldId)
+    schemaFields.value = schemaFields.value.filter((f: SchemaField) => f.id !== fieldId)
   }
 
   async function reorderSchemaFields(newFields: SchemaField[]) {

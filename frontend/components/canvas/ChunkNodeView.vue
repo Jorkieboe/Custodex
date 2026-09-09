@@ -25,7 +25,6 @@ const contextSegmentIndex = ref<number | null>(null)
 const contextCaretOffset = ref<number | null>(null)
 let saveTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Step-aware rule: indicator is exclusively visible during the 'embeddings' step
 const showEmbeddingStatus = computed(() => store.currentStep === 'embeddings')
 const isSelected = computed(() => store.selectedNodeIds.has(props.node.id))
 
@@ -84,9 +83,9 @@ const contextMenuItems = computed(() => {
 
   if (store.currentStep === 'embeddings') {
     items.push({
-        label: 'Generate Embeddings',
-        action: () => {},
-      })
+      label: 'Generate Embeddings',
+      action: () => {},
+    })
   }
 
   return items
@@ -102,7 +101,6 @@ function handleSegmentInput(idx: number, event: Event) {
   const el = event.target as HTMLDivElement
   const currentVal = el.innerText
 
-  // Check if double enter was typed or pasted inside this div
   if (currentVal.includes('\n\n')) {
     const innerParts = currentVal.split(/\n\s*\n/)
     segments.value.splice(idx, 1, ...innerParts)
@@ -114,7 +112,6 @@ function handleSegmentInput(idx: number, event: Event) {
           targetEl.innerText = segments.value[i]
         }
       })
-      // Focus into the subsequent segment
       const nextEl = segmentRefs.value[idx + 1]
       if (nextEl) {
         nextEl.focus()
@@ -131,7 +128,6 @@ function handleSegmentKeyDown(idx: number, event: KeyboardEvent) {
   const el = segmentRefs.value[idx]
   if (!el) return
 
-  // Detect double enter: Enter pressed when cursor is at the end of an empty line
   if (event.key === 'Enter' && !event.shiftKey) {
     const selection = window.getSelection()
     if (selection && selection.rangeCount > 0) {
@@ -167,7 +163,6 @@ function handleSegmentKeyDown(idx: number, event: KeyboardEvent) {
     }
   }
 
-  // Backspace at the beginning of a segment: merge with previous segment
   if (event.key === 'Backspace' && idx > 0) {
     const selection = window.getSelection()
     if (selection && selection.rangeCount > 0 && selection.isCollapsed) {
@@ -276,7 +271,7 @@ function handleContextSplit() {
   closeContextMenu()
 }
 
-function handleSegmentMouseUp(idx: number, event: MouseEvent) {
+function handleSegmentMouseUp(idx: number) {
   const selection = window.getSelection()
   if (!selection || selection.isCollapsed) return
   const text = selection.toString().trim()
@@ -314,7 +309,6 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
         />
         <span class="order-badge">#{{ node.order_index }}</span>
 
-        <!-- Embedding status indicator pill (step-aware: exclusively visible during embeddings step) -->
         <span
           v-if="showEmbeddingStatus"
           class="status-pill"
@@ -344,9 +338,8 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
       </div>
     </div>
 
-    <!-- Chunk Content Body: Each block of text in its own div, with split buttons strictly between them -->
     <div class="chunk-body">
-      <template v-for="(seg, idx) in segments" :key="idx">
+      <template v-for="(_, idx) in segments" :key="idx">
         <div
           :ref="el => setSegmentRef(el, idx)"
           class="chunk-editable-content"
@@ -355,10 +348,9 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
           @input="e => handleSegmentInput(idx, e)"
           @keydown="e => handleSegmentKeyDown(idx, e)"
           @blur="handleSegmentBlur"
-          @mouseup="e => handleSegmentMouseUp(idx, e)"
+          @mouseup="() => handleSegmentMouseUp(idx)"
         ></div>
 
-        <!-- Interactive hover split divider positioned directly between separated text divs -->
         <div
           v-if="idx < segments.length - 1 && store.currentStep == 'chunks'"
           class="hover-split-divider"
@@ -371,7 +363,6 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
       </template>
     </div>
 
-    <!-- Right-Click Context Menu -->
     <div
       v-if="contextMenuVisible && contextMenuItems.length > 0"
       class="context-menu-backdrop"
@@ -389,7 +380,7 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
           @click="item.action"
         >
           {{ item.label }}
-    </button>
+        </button>
       </div>
     </div>
   </div>

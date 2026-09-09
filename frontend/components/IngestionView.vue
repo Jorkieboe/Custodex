@@ -68,7 +68,6 @@ async function handleDrop(event: DragEvent) {
           v-for="doc in store.documents"
           :key="doc.id"
           class="doc-card"
-   
         >
           <div class="doc-main">
             <span class="format-badge">{{ doc.file_type.toUpperCase() }}</span>

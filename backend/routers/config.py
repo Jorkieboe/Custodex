@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.config import AppConfig, load_config, save_config
+from backend.config import AppConfig, load_config, save_config
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 

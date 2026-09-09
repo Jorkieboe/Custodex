@@ -4,14 +4,14 @@ import pytest
 import docx
 from fastapi.testclient import TestClient
 
-from src.db.connection import get_connection
-from src.db.migrations import init_db
-from src.db.models import DocumentModel, NodeModel, ProjectModel
-from src.main import app
-from src.parsers.docx_parser import parse_docx
-from src.parsers.text_parser import parse_markdown, parse_plain_text
-from src.parsers.pdf_parser import parse_pdf_fallback
-from src.services.hierarchy_service import (
+from backend.db.connection import get_connection
+from backend.db.migrations import init_db
+from backend.db.models import DocumentModel, NodeModel, ProjectModel
+from backend.main import app
+from backend.parsers.docx_parser import parse_docx
+from backend.parsers.text_parser import parse_markdown, parse_plain_text
+from backend.parsers.pdf_parser import parse_pdf_fallback
+from backend.services.hierarchy_service import (
     change_node_type,
     demote_header_to_node,
     detach_selection_to_header,
@@ -19,7 +19,7 @@ from src.services.hierarchy_service import (
     promote_node_to_header,
     split_node,
 )
-from src.services.project_manager import register_custom_connection
+from backend.services.project_manager import register_custom_connection
 
 client = TestClient(app)
 

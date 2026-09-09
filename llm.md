@@ -44,4 +44,4 @@ Before adding a note, ask: **"Would an experienced developer be surprised by thi
 ## Code Quirks & Workarounds
 *(Append new notes below this line)*
 
-- `src/db/hierarchy.py`: Python's `sqlite3` driver returns `cursor.rowcount = -1` on statements starting with `WITH ... UPDATE` because its statement inspection logic only detects statements starting directly with `UPDATE`/`INSERT`/`DELETE`. Two-stage execution (CTE select followed by a direct parameterized UPDATE) is used to obtain an accurate `rowcount`.
+- `backend/db/hierarchy.py`: Python's `sqlite3` driver returns `cursor.rowcount = -1` on statements starting with `WITH ... UPDATE` because its statement inspection logic only detects statements starting directly with `UPDATE`/`INSERT`/`DELETE`. Two-stage execution (CTE select followed by a direct parameterized UPDATE) is used to obtain an accurate `rowcount`.

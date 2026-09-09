@@ -4,12 +4,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from src.config import load_config
-from src.routers.config import router as config_router
-from src.routers.documents import router as documents_router
-from src.routers.nodes import router as nodes_router
-from src.routers.projects import router as projects_router
-from src.routers.schema import router as schema_router
+from backend.config import load_config
+from backend.routers.config import router as config_router
+from backend.routers.documents import router as documents_router
+from backend.routers.nodes import router as nodes_router
+from backend.routers.projects import router as projects_router
+from backend.routers.schema import router as schema_router
 
 app = FastAPI(
     title="Custodex API",
@@ -61,4 +61,4 @@ async def get_status() -> StatusResponse:
     )
 
 if __name__ == "__main__":
-    uvicorn.run("src.main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

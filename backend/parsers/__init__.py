@@ -1,10 +1,10 @@
 import io
 from pathlib import Path
 from typing import BinaryIO, List
-from src.db.models import NodeModel
-from src.parsers.docx_parser import parse_docx
-from src.parsers.text_parser import parse_markdown, parse_plain_text
-from src.parsers.pdf_parser import parse_pdf_fallback
+from backend.db.models import NodeModel
+from backend.parsers.docx_parser import parse_docx
+from backend.parsers.text_parser import parse_markdown, parse_plain_text
+from backend.parsers.pdf_parser import parse_pdf_fallback
 
 def parse_document_file(file_stream: BinaryIO, filename: str, document_id: str) -> List[NodeModel]:
     ext = Path(filename).suffix.lower()

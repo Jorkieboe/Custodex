@@ -4,7 +4,7 @@ from typing import BinaryIO, List, Optional
 import docx
 from docx.text.paragraph import Paragraph
 
-from src.db.models import NodeModel, generate_uuid
+from backend.db.models import NodeModel, generate_uuid
 
 def _get_heading_level(paragraph: Paragraph) -> Optional[int]:
     style_name = paragraph.style.name if paragraph.style else ""
@@ -17,7 +17,6 @@ def parse_docx(file_stream: BinaryIO, document_id: str) -> List[NodeModel]:
     doc = docx.Document(file_stream)
     nodes: List[NodeModel] = []
 
-    # Stack stores (heading_level, node_id) tuples to resolve hierarchical parent_id
     heading_stack: List[tuple[int, str]] = []
     current_order_index = 0
 

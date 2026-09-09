@@ -1,13 +1,13 @@
 import json
 import sqlite3
 from typing import Any, Dict, List, Optional
-from src.db.hierarchy import (
+from backend.db.hierarchy import (
     cascade_header_stale_status,
     densify_order_indices,
     shift_order_indices,
     validate_acyclic_parent,
 )
-from src.db.models import NodeModel, generate_uuid
+from backend.db.models import NodeModel, generate_uuid
 
 def update_node_text(conn: sqlite3.Connection, node_id: str, new_text: str) -> NodeModel:
     cursor = conn.cursor()
@@ -59,10 +59,8 @@ def split_node(conn: sqlite3.Connection, node_id: str, top_text: str, bottom_tex
     child_order_index = original_order_index + 1
 
     with conn:
-        # Shift downstream order indices
         shift_order_indices(conn, original_doc_id, start_index=child_order_index, delta=1)
 
-        # Update upper slice
         new_primary_status = "stale" if original_status == "current" else original_status
         conn.execute(
             """
@@ -73,7 +71,6 @@ def split_node(conn: sqlite3.Connection, node_id: str, top_text: str, bottom_tex
             (top_text, new_primary_status, node_id),
         )
 
-        # Insert lower slice
         conn.execute(
             """
             INSERT INTO nodes (id, document_id, parent_id, node_type, text_content, order_index, embedding_status)
@@ -82,7 +79,6 @@ def split_node(conn: sqlite3.Connection, node_id: str, top_text: str, bottom_tex
             (child_node_id, original_doc_id, original_parent_id, bottom_text, child_order_index),
         )
 
-        # Inherit metadata from parent chunk
         cursor.execute("SELECT field_id, field_value, user_edited FROM node_metadata WHERE node_id = ?;", (node_id,))
         metadata_rows = cursor.fetchall()
         for m in metadata_rows:
@@ -133,7 +129,6 @@ def _combine_field_values(val1_raw: str, val2_raw: str) -> tuple[str, bool]:
                 combined.append(item)
         return (json.dumps(combined), False)
 
-    # Conflicting scalar values: retain top chunk value and note conflict
     return (json.dumps({"value": parsed1, "conflict_with": parsed2, "has_conflict": True}), True)
 
 def merge_nodes(conn: sqlite3.Connection, lead_node_id: str) -> NodeModel:
@@ -157,7 +152,6 @@ def merge_nodes(conn: sqlite3.Connection, lead_node_id: str) -> NodeModel:
     succ_node_id = succ_row["id"]
     combined_text = lead_row["text_content"].rstrip() + "\n\n" + succ_row["text_content"].lstrip()
 
-    # Combine metadata
     cursor.execute("SELECT field_id, field_value, user_edited FROM node_metadata WHERE node_id = ?;", (lead_node_id,))
     lead_meta = {r["field_id"]: (r["field_value"], bool(r["user_edited"])) for r in cursor.fetchall()}
 
@@ -178,10 +172,8 @@ def merge_nodes(conn: sqlite3.Connection, lead_node_id: str) -> NodeModel:
             final_metadata[fid] = succ_meta[fid]
 
     with conn:
-        # Delete successor node (cascades metadata and embeddings)
         conn.execute("DELETE FROM nodes WHERE id = ?;", (succ_node_id,))
 
-        # Update lead node
         new_status = "stale" if lead_row["embedding_status"] == "current" else lead_row["embedding_status"]
         conn.execute(
             """
@@ -192,7 +184,6 @@ def merge_nodes(conn: sqlite3.Connection, lead_node_id: str) -> NodeModel:
             (combined_text, new_status, lead_node_id),
         )
 
-        # Update metadata for lead node
         conn.execute("DELETE FROM node_metadata WHERE node_id = ?;", (lead_node_id,))
         for fid, (fval, uedit) in final_metadata.items():
             conn.execute(
@@ -203,7 +194,6 @@ def merge_nodes(conn: sqlite3.Connection, lead_node_id: str) -> NodeModel:
                 (lead_node_id, fid, fval, int(uedit)),
             )
 
-        # Densify order indices across document
         densify_order_indices(conn, doc_id)
 
     return NodeModel(
@@ -232,7 +222,6 @@ def change_node_type(conn: sqlite3.Connection, node_id: str, promote: bool) -> N
     current_parent = row["parent_id"]
 
     if promote:
-        # Subsequent sibling paragraphs that share current_parent get re-parented to this newly promoted header
         cursor.execute(
             """
             SELECT id, node_type, parent_id, order_index FROM nodes
@@ -252,7 +241,6 @@ def change_node_type(conn: sqlite3.Connection, node_id: str, promote: bool) -> N
                 reparent_ids.append(sn["id"])
         new_children_parent = node_id
     else:
-        # Existing child nodes under this header get re-parented to the parent above
         cursor.execute(
             "SELECT id FROM nodes WHERE document_id = ? AND parent_id = ?;",
             (doc_id, node_id),

@@ -6,7 +6,7 @@ setlocal enabledelayedexpansion
 :: =================================================================
 set "PROJECT_NAME=Custodex"
 set "VENV_DIR=.venv"
-set "START_SCRIPT=src.main"
+set "START_SCRIPT=backend.main"
 set "SPEC_FILE=%PROJECT_NAME%.spec"
 set "FLAG=%1"
 set "ARG2=%2"
@@ -16,10 +16,15 @@ set "ARG2=%2"
 :: =================================================================
 if /I "%FLAG%"=="" goto :DefaultAction
 if /I "%FLAG%"=="i" goto :InstallDeps
+if /I "%FLAG%"=="install" goto :InstallDeps
 if /I "%FLAG%"=="cmd" goto :OpenCmd
 if /I "%FLAG%"=="f" goto :FreezeReqs
+if /I "%FLAG%"=="freeze" goto :FreezeReqs
 if /I "%FLAG%"=="b" goto :BuildApp
+if /I "%FLAG%"=="build" goto :BuildApp
 if /I "%FLAG%"=="t" goto :RunTests
+if /I "%FLAG%"=="test" goto :RunTests
+if /I "%FLAG%"=="tests" goto :RunTests
 echo Unrecognized command: "%FLAG%".
 goto :Usage
 
@@ -160,11 +165,11 @@ goto :Usage
 :Usage
     echo.
     echo Commands:
-    echo   (no flag) - Runs the main application script
-    echo   i         - Installs backend and frontend dependencies
-    echo   cmd       - Opens a command prompt with the venv activated
-    echo   f         - Freezes dependencies to requirements.txt
-    echo   b         - Builds frontend and packages executable via PyInstaller
-    echo   t         - Runs Pytest and Vitest test suites
+    echo   (no flag)      - Runs the main application script
+    echo   i, install     - Installs backend and frontend dependencies
+    echo   cmd            - Opens a command prompt with the venv activated
+    echo   f, freeze      - Freezes dependencies to requirements.txt
+    echo   b, build       - Builds frontend and packages executable via PyInstaller
+    echo   t, test, tests - Runs Pytest and Vitest test suites
     echo.
     goto :eof

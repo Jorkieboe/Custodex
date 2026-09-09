@@ -1,6 +1,6 @@
 import re
 from typing import List, Optional
-from src.db.models import NodeModel, generate_uuid
+from backend.db.models import NodeModel, generate_uuid
 
 def parse_markdown(text_content: str, document_id: str) -> List[NodeModel]:
     nodes: List[NodeModel] = []

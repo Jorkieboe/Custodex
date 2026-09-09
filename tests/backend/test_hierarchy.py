@@ -1,8 +1,8 @@
 import sqlite3
 import pytest
-from src.db.connection import get_connection
-from src.db.migrations import init_db
-from src.db.hierarchy import (
+from backend.db.connection import get_connection
+from backend.db.migrations import init_db
+from backend.db.hierarchy import (
     format_contextual_breadcrumb_string,
     validate_acyclic_parent,
     densify_order_indices,

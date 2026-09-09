@@ -2,8 +2,8 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from src.db.models import NodeModel
-from src.services.hierarchy_service import (
+from backend.db.models import NodeModel
+from backend.services.hierarchy_service import (
     change_node_type,
     demote_header_to_node,
     detach_selection_to_header,
@@ -12,7 +12,7 @@ from src.services.hierarchy_service import (
     split_node,
     update_node_text,
 )
-from src.services.project_manager import get_project_connection
+from backend.services.project_manager import get_project_connection
 
 router = APIRouter(prefix="/api/projects/{project_id}/nodes", tags=["nodes"])
 

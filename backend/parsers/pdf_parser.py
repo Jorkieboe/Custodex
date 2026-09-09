@@ -1,13 +1,12 @@
 import io
 import re
 from typing import BinaryIO, List
-from src.db.models import NodeModel, generate_uuid
+from backend.db.models import NodeModel, generate_uuid
 
 def parse_pdf_fallback(file_stream: BinaryIO, document_id: str) -> List[NodeModel]:
     raw_bytes = file_stream.read()
     text_parts: List[str] = []
 
-    # Extract literal strings within PDF text objects (BT ... ET)
     bt_blocks = re.findall(rb"BT[\s\S]*?ET", raw_bytes)
     for block in bt_blocks:
         strings = re.findall(rb"\((.*?)\)", block)
@@ -21,7 +20,6 @@ def parse_pdf_fallback(file_stream: BinaryIO, document_id: str) -> List[NodeMode
 
     extracted_text = " ".join(text_parts).strip()
     if not extracted_text:
-        # Fallback: regex search for printable ascii/latin text blocks
         ascii_strings = re.findall(rb"[A-Za-z0-9 ,.;:!?'\"()\n\r-]{4,}", raw_bytes)
         decoded_blocks = [
             b.decode("latin-1", errors="ignore").strip()
