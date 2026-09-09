@@ -130,5 +130,35 @@
   },
   {
     "path": "tests/backend/test_ingestion_and_mutations.py"
+  },
+  {
+    "path": "src/components/canvas/ChunkCanvas.vue"
+  },
+  {
+    "path": "src/components/canvas/ChunkNodeView.vue"
+  },
+  {
+    "path": "src/components/canvas/HeaderNodeView.vue"
+  },
+  {
+    "path": "src/components/IngestionView.vue"
+  },
+  {
+    "path": "src/components/ProjectHub.vue"
+  },
+  {
+    "path": "src/components/SettingsModal.vue"
+  },
+  {
+    "path": "src/components/StepNavigator.vue"
+  },
+  {
+    "path": "src/routers/config.py"
+  },
+  {
+    "path": "src/stores/workspace.ts"
+  },
+  {
+    "path": "tests/frontend/workspace.test.ts"
   }
 ]

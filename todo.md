@@ -21,7 +21,7 @@ graph TD
 - [x] **Frontend Environment Setup:**
   - [x] Initialize Vite application with Vue 3, TypeScript, Pinia, and SCSS preprocessor.
   - [x] Install client dependencies: `@tiptap/vue-3`, `@tiptap/pm`, `@tiptap/starter-kit`, `lucide-vue-next`, `axios`.
-  - [x] Establish centralized HTTP client configured with local base URL (`http://localhost:8000`).
+  - [x] Centralized HTTP client configured with local base URL (`http://localhost:8000`).
   - [x] Configure SCSS design tokens (color variables, status indicators for `current`, `stale`, and `missing` states, font families, and modal layouts).
 - [x] **Unit Testing & Test Runner Configuration:**
   - [x] Configure Pytest in `pytest.ini` with test discovery under `tests/backend/` and setup in-memory SQLite fixtures.
@@ -112,38 +112,38 @@ graph TD
 
 *Sequencing Note: All manual boundary operations (cursor splits, double-enter hover splits, right-click splits, selection-to-header, and merges) in this section are designed to function independently without requiring AI/vector connectivity. Semantic auto-splitting is layered later in Section 6 as an optional AI-assisted accelerator.*
 
-- [ ] **Project Hub & Router Setup:**
-  - [ ] Implement Project Hub view with recent projects list, "Open Existing Project" directory picker, and "Create Project" modal.
-  - [ ] Implement global settings modal to set default LLM and embedding model endpoints (LM Studio).
-  - [ ] Implement bidirectional step navigator bar allowing users to switch freely between Ingestion, Chunk Canvas, Schema Designer, Metadata Extraction, Embedding Refresh, and Export without state loss.
-- [ ] **Pinia Workspace Store:**
-  - [ ] Implement `useWorkspaceStore` holding active project details, loaded document tree, active node selection, current workspace step, and dirty chunk tracking.
-  - [ ] Implement actions for optimistic UI updates during chunk splitting, merging, and type promotions, with server reconciliation on error.
-  - [ ] Track real-time dirty flags for modified chunks (`current`, `stale`, `missing`) in the background regardless of active step.
-- [ ] **Tiptap Custom Visual Hierarchy Canvas:**
-  - [ ] Implement core Tiptap editor wrapper configured with ProseMirror schema enforcing `header` and `paragraph` node types.
-  - [ ] Build custom Vue Node View for `HeaderNode`:
-    - [ ] Displays heading level indicator (H1, H2, H3).
-    - [ ] Inline style switcher to demote header to paragraph.
-    - [ ] Visual indicator showing count of child chunks linked to this header.
-  - [ ] Build custom Vue Node View for `ChunkContainerNode`:
-    - [ ] Distinct bordered container displaying scoped `order_index` badge.
-    - [ ] Step-aware embedding status indicator pill (`current` in green, `stale` in yellow, `missing` in red), reactively displayed exclusively during the Embedding Refresh step (hidden during Ingestion, Chunk Canvas, Schema Designer, and Metadata Extraction to minimize visual clutter).
-    - [ ] Double-enter hover split divider: detect double Enter within a chunk to produce an interactive break that displays a dotted horizontal line with a centered "Split" button on hover.
-    - [ ] Right-click context menu integration: custom context menu triggered on right-click within chunk body providing a "Split Chunk Here" action targeting the exact cursor position.
-    - [ ] Merge button to combine with adjacent node.
-  - [ ] Implement floating text selection toolbar:
-    - [ ] Appears upon text highlight inside any chunk.
-    - [ ] Includes "Make Header" button that calls `/api/projects/{id}/nodes/detach-selection` and replaces editor state with newly detached nodes.
-    - [ ] Other option is also to split the chunk here. then we split it from the start of selection
-- [ ] **Multi-Chunk Selection Toolbar:**
-  - [ ] Enable multi-chunk checkbox selection across document sections for batch operations (batch semantic split, batch regenerate metadata).
-- [ ] **Testing Point 2: Verify Visual Canvas & Manual Boundary Operations**
-  - [ ] Load imported document into Tiptap canvas.
-  - [ ] Perform chunk split via double-enter hover dotted line button and via right-click context menu; confirm upper slice keeps original ID while lower slice receives fresh UUID.
-  - [ ] Highlight text substring, trigger "Make Header", and verify detached header creates new hierarchy parent with updated child bindings.
-  - [ ] Verify that embedding status indicator pills remain hidden in Chunk Canvas step and become visible when switching to the Embedding Refresh step.
-  - [ ] Run `go t` to ensure frontend store and component unit tests pass cleanly.
+- [x] **Project Hub & Router Setup:**
+  - [x] Implement Project Hub view with recent projects list, "Open Existing Project" directory picker, and "Create Project" modal.
+  - [x] Implement global settings modal to set default LLM and embedding model endpoints (LM Studio).
+  - [x] Implement bidirectional step navigator bar allowing users to switch freely between Ingestion, Chunk Canvas, Schema Designer, Metadata Extraction, Embedding Refresh, and Export without state loss.
+- [x] **Pinia Workspace Store:**
+  - [x] Implement `useWorkspaceStore` holding active project details, loaded document tree, active node selection, current workspace step, and dirty chunk tracking.
+  - [x] Implement actions for optimistic UI updates during chunk splitting, merging, and type promotions, with server reconciliation on error.
+  - [x] Track real-time dirty flags for modified chunks (`current`, `stale`, `missing`) in the background regardless of active step.
+- [x] **Tiptap Custom Visual Hierarchy Canvas:**
+  - [x] Implement core Tiptap editor wrapper configured with ProseMirror schema enforcing `header` and `paragraph` node types.
+  - [x] Build custom Vue Node View for `HeaderNode`:
+    - [x] Displays heading level indicator (H1, H2, H3).
+    - [x] Inline style switcher to demote header to paragraph.
+    - [x] Visual indicator showing count of child chunks linked to this header.
+  - [x] Build custom Vue Node View for `ChunkContainerNode`:
+    - [x] Distinct bordered container displaying scoped `order_index` badge.
+    - [x] Step-aware embedding status indicator pill (`current` in green, `stale` in yellow, `missing` in red), reactively displayed exclusively during the Embedding Refresh step (hidden during Ingestion, Chunk Canvas, Schema Designer, and Metadata Extraction to minimize visual clutter).
+    - [x] Double-enter hover split divider: detect double Enter within a chunk to produce an interactive break that displays a dotted horizontal line with a centered "Split" button on hover.
+    - [x] Right-click context menu integration: custom context menu triggered on right-click within chunk body providing a "Split Chunk Here" action targeting the exact cursor position.
+    - [x] Merge button to combine with adjacent node.
+  - [x] Implement floating text selection toolbar:
+    - [x] Appears upon text highlight inside any chunk.
+    - [x] Includes "Make Header" button that calls `/api/projects/{id}/nodes/detach-selection` and replaces editor state with newly detached nodes.
+    - [x] Other option is also to split the chunk here. then we split it from the start of selection
+- [x] **Multi-Chunk Selection Toolbar:**
+  - [x] Enable multi-chunk checkbox selection across document sections for batch operations (batch semantic split, batch regenerate metadata).
+- [x] **Testing Point 2: Verify Visual Canvas & Manual Boundary Operations**
+  - [x] Load imported document into Tiptap canvas.
+  - [x] Perform chunk split via double-enter hover dotted line button and via right-click context menu; confirm upper slice keeps original ID while lower slice receives fresh UUID.
+  - [x] Highlight text substring, trigger "Make Header", and verify detached header creates new hierarchy parent with updated child bindings.
+  - [x] Verify that embedding status indicator pills remain hidden in Chunk Canvas step and become visible when switching to the Embedding Refresh step.
+  - [x] Run `go t` to ensure frontend store and component unit tests pass cleanly.
 
 ## CMS Schema Designer & Metadata Extraction
 

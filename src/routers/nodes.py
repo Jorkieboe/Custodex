@@ -8,10 +8,14 @@ from src.services.hierarchy_service import (
     merge_nodes,
     promote_node_to_header,
     split_node,
+    update_node_text,
 )
 from src.services.project_manager import get_project_connection
 
 router = APIRouter(prefix="/api/projects/{project_id}/nodes", tags=["nodes"])
+
+class UpdateNodePayload(BaseModel):
+    text_content: str
 
 class SplitNodePayload(BaseModel):
     top_text: str
@@ -42,6 +46,15 @@ async def get_project_nodes(project_id: str, document_id: Optional[str] = None):
         )
     rows = cursor.fetchall()
     return [NodeModel(**dict(r)) for r in rows]
+
+@router.patch("/{node_id}", response_model=NodeModel)
+async def api_update_node(project_id: str, node_id: str, payload: UpdateNodePayload):
+    conn = get_project_connection(project_id)
+    try:
+        updated = update_node_text(conn, node_id, payload.text_content)
+        return updated
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/{node_id}/split", response_model=List[NodeModel])
 async def api_split_node(project_id: str, node_id: str, payload: SplitNodePayload):

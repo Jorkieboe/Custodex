@@ -315,3 +315,12 @@ def test_document_and_node_api_routes(memory_project):
     assert len(split_data) == 2
     assert split_data[0]["text_content"] == "First chunk"
     assert split_data[1]["text_content"] == "paragraph."
+
+    # Test update node text endpoint
+    patch_resp = client.patch(
+        f"/api/projects/{project_id}/nodes/{paragraph_node['id']}",
+        json={"text_content": "Edited chunk content with new enters\n\nSecond line."}
+    )
+    assert patch_resp.status_code == 200
+    updated_node = patch_resp.json()
+    assert "Edited chunk content" in updated_node["text_content"]

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from typing import List
+from src.config import load_config, save_config
 from src.db.models import ProjectModel, generate_uuid
 from src.services.project_manager import ensure_project_record, get_project_connection
 
@@ -10,6 +12,22 @@ class CreateProjectPayload(BaseModel):
     name: str
     llm_model: str = "local-model"
     embedding_model: str = "text-embedding-nomic-embed-text-v1.5"
+
+@router.get("", response_model=List[ProjectModel])
+async def list_projects():
+    cfg = load_config()
+    projects: List[ProjectModel] = []
+    for pid in cfg.recent_projects:
+        try:
+            conn = get_project_connection(pid)
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM projects WHERE id = ?;", (pid,))
+            row = cursor.fetchone()
+            if row:
+                projects.append(ProjectModel(**dict(row)))
+        except Exception:
+            continue
+    return projects
 
 @router.post("", response_model=ProjectModel)
 async def create_project(payload: CreateProjectPayload):
@@ -22,6 +40,13 @@ async def create_project(payload: CreateProjectPayload):
         llm_model=payload.llm_model,
         embedding_model=payload.embedding_model,
     )
+
+    cfg = load_config()
+    if project_id not in cfg.recent_projects:
+        cfg.recent_projects.insert(0, project_id)
+        cfg.recent_projects = cfg.recent_projects[:10]
+        save_config(cfg)
+
     return project
 
 @router.get("/{project_id}", response_model=ProjectModel)

@@ -9,6 +9,40 @@ from src.db.hierarchy import (
 )
 from src.db.models import NodeModel, generate_uuid
 
+def update_node_text(conn: sqlite3.Connection, node_id: str, new_text: str) -> NodeModel:
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM nodes WHERE id = ?;", (node_id,))
+    row = cursor.fetchone()
+    if not row:
+        raise ValueError(f"Node with id {node_id} not found")
+
+    node_type = row["node_type"]
+    original_status = row["embedding_status"]
+    new_status = "stale" if original_status == "current" else original_status
+
+    with conn:
+        conn.execute(
+            """
+            UPDATE nodes
+            SET text_content = ?, embedding_status = ?
+            WHERE id = ?;
+            """,
+            (new_text, new_status, node_id),
+        )
+
+        if node_type == "header":
+            cascade_header_stale_status(conn, node_id)
+
+    return NodeModel(
+        id=node_id,
+        document_id=row["document_id"],
+        parent_id=row["parent_id"],
+        node_type=node_type,
+        text_content=new_text,
+        order_index=row["order_index"],
+        embedding_status=new_status,
+    )
+
 def split_node(conn: sqlite3.Connection, node_id: str, top_text: str, bottom_text: str) -> tuple[NodeModel, NodeModel]:
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM nodes WHERE id = ?;", (node_id,))

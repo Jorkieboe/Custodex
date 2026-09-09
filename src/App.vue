@@ -1,316 +1,194 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { fetchApiStatus, type ApiStatus } from './services/api'
+import { ref } from 'vue'
+import { useWorkspaceStore } from './stores/workspace'
+import ProjectHub from './components/ProjectHub.vue'
+import StepNavigator from './components/StepNavigator.vue'
+import IngestionView from './components/IngestionView.vue'
+import ChunkCanvas from './components/canvas/ChunkCanvas.vue'
+import SettingsModal from './components/SettingsModal.vue'
 
-const loading = ref(true)
-const error = ref<string | null>(null)
-const statusData = ref<ApiStatus | null>(null)
+const store = useWorkspaceStore()
+const activeProjectId = ref<string | null>(null)
+const showSettings = ref(false)
 
-async function checkStatus() {
-  loading.value = true
-  error.value = null
-  try {
-    statusData.value = await fetchApiStatus()
-  } catch (err: any) {
-    error.value = err.message || 'Failed to connect to Custodex backend service'
-  } finally {
-    loading.value = false
-  }
+async function handleSelectProject(projectId: string) {
+  activeProjectId.value = projectId
+  await store.loadProject(projectId)
 }
 
-onMounted(() => {
-  checkStatus()
-})
+function handleBackToHub() {
+  activeProjectId.value = null
+}
 </script>
 
 <template>
-  <div class="workbench-container">
-    <header class="workbench-header">
-      <div class="brand">
-        <span class="brand-icon">📦</span>
-        <h1 class="brand-title">Custodex</h1>
-        <span class="brand-tag">Workbench</span>
-      </div>
-      <button class="refresh-btn" @click="checkStatus" :disabled="loading">
-        {{ loading ? 'Checking...' : 'Refresh Status' }}
-      </button>
-    </header>
+  <div class="app-root">
+    <!-- Hub View when no active project -->
+    <ProjectHub
+      v-if="!activeProjectId"
+      @select-project="handleSelectProject"
+    />
 
-    <main class="workbench-content">
-      <div class="card status-card">
-        <h2 class="card-title">System Liveness & Connectivity</h2>
+    <!-- Active Project Workspace -->
+    <div v-else class="workspace-layout">
+      <StepNavigator
+        @open-settings="showSettings = true"
+        @back-to-hub="handleBackToHub"
+      />
 
-        <div v-if="loading" class="status-loading">
-          Connecting to Custodex backend...
-        </div>
+      <main class="workspace-main">
+        <!-- Step 1: Ingestion -->
+        <IngestionView v-if="store.currentStep === 'ingestion'" />
 
-        <div v-else-if="error" class="status-alert error">
-          <span class="indicator indicator-missing"></span>
-          <div>
-            <strong>Backend Connection Offline:</strong>
-            <p>{{ error }}</p>
+        <!-- Step 2: Chunk Canvas -->
+        <ChunkCanvas v-else-if="store.currentStep === 'chunks'" />
+
+        <!-- Step 3: Schema Designer Placeholder -->
+        <div v-else-if="store.currentStep === 'schema'" class="step-placeholder">
+          <div class="placeholder-card">
+            <h2>CMS Metadata Schema Designer</h2>
+            <p>Visual collection builder will configure structured metadata attributes.</p>
+            <button class="btn btn-primary" @click="store.setStep('chunks')">
+              Return to Chunk Canvas
+            </button>
           </div>
         </div>
 
-        <div v-else-if="statusData" class="status-details">
-          <div class="status-row">
-            <span class="label">Backend API:</span>
-            <span class="badge badge-current">
-              <span class="indicator indicator-current"></span>
-              {{ statusData.status.toUpperCase() }}
-            </span>
-          </div>
-
-          <div class="status-row">
-            <span class="label">LM Studio Provider:</span>
-            <span
-              class="badge"
-              :class="statusData.lm_studio_connected ? 'badge-current' : 'badge-stale'"
-            >
-              <span
-                class="indicator"
-                :class="statusData.lm_studio_connected ? 'indicator-current' : 'indicator-stale'"
-              ></span>
-              {{ statusData.lm_studio_connected ? 'Connected' : 'Unreachable (Optional for local AI)' }}
-            </span>
-          </div>
-
-          <div class="status-row">
-            <span class="label">LM Studio Endpoint:</span>
-            <code class="code-value">{{ statusData.lm_studio_endpoint }}</code>
-          </div>
-
-          <div class="status-row">
-            <span class="label">Default LLM Model:</span>
-            <code class="code-value">{{ statusData.default_llm_model }}</code>
-          </div>
-
-          <div class="status-row">
-            <span class="label">Default Embedding Model:</span>
-            <code class="code-value">{{ statusData.default_embedding_model }}</code>
+        <!-- Step 4: Metadata Extraction Placeholder -->
+        <div v-else-if="store.currentStep === 'metadata'" class="step-placeholder">
+          <div class="placeholder-card">
+            <h2>Partitioned Metadata Extraction</h2>
+            <p>Batch LLM extraction engine with real-time SSE progress streaming.</p>
+            <button class="btn btn-primary" @click="store.setStep('chunks')">
+              Return to Chunk Canvas
+            </button>
           </div>
         </div>
-      </div>
 
-      <div class="card tokens-preview-card">
-        <h2 class="card-title">Status Indicator Tokens</h2>
-        <div class="tokens-list">
-          <div class="token-item">
-            <span class="badge badge-current">
-              <span class="indicator indicator-current"></span>
-              Current (Synchronized)
-            </span>
+        <!-- Step 5: Incremental Embedding Refresh -->
+        <!-- Note: Embedding status indicators become visible on the canvas during this step -->
+        <div v-else-if="store.currentStep === 'embeddings'" class="embeddings-step-layout">
+          <div class="embeddings-banner">
+            <div>
+              <h3>Embedding Status & Incremental Refresh</h3>
+              <p>Status indicators are active. Synchronized: {{ store.currentEmbeddingCounts.current }} | Stale: {{ store.currentEmbeddingCounts.stale }} | Missing: {{ store.currentEmbeddingCounts.missing }}</p>
+            </div>
+            <button class="btn btn-primary">
+              Refresh Stale Embeddings
+            </button>
           </div>
-          <div class="token-item">
-            <span class="badge badge-stale">
-              <span class="indicator indicator-stale"></span>
-              Stale (Pending Refresh)
-            </span>
-          </div>
-          <div class="token-item">
-            <span class="badge badge-missing">
-              <span class="indicator indicator-missing"></span>
-              Missing (Uncalculated)
-            </span>
+          <ChunkCanvas />
+        </div>
+
+        <!-- Step 6: Export Placeholder -->
+        <div v-else-if="store.currentStep === 'export'" class="step-placeholder">
+          <div class="placeholder-card">
+            <h2>Validation Gate & RAG Bundle Exporter</h2>
+            <p>Verification engine will ensure dataset completeness prior to packaging.</p>
+            <button class="btn btn-primary" @click="store.setStep('chunks')">
+              Return to Chunk Canvas
+            </button>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+
+      <SettingsModal v-if="showSettings" @close="showSettings = false" />
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
 @use './styles/variables' as *;
 
-.workbench-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background-color: $color-bg;
-}
-
-.workbench-header {
-  height: $header-height;
-  background-color: $color-surface;
-  border-bottom: 1px solid $color-border;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  .brand-icon {
-    font-size: 20px;
-  }
-
-  .brand-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: $color-text-primary;
-    letter-spacing: -0.02em;
-  }
-
-  .brand-tag {
-    font-size: 11px;
-    text-transform: uppercase;
-    background-color: $color-surface-hover;
-    color: $color-primary;
-    padding: 2px 8px;
-    border-radius: $radius-sm;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-  }
-}
-
-.refresh-btn {
-  background-color: $color-surface-hover;
-  color: $color-text-primary;
-  border: 1px solid $color-border;
-  padding: 6px 14px;
-  border-radius: $radius-md;
-  transition: all 0.15s ease;
-
-  &:hover:not(:disabled) {
-    background-color: lighten(#334155, 5%);
-    border-color: $color-primary;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-.workbench-content {
-  flex: 1;
-  padding: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  max-width: 800px;
-  margin: 0 auto;
+.app-root {
   width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.card {
+.workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.workspace-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.placeholder-card {
   background-color: $color-surface;
   border: 1px solid $color-border;
   border-radius: $radius-lg;
-  padding: 24px;
-
-  .card-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: $color-text-primary;
-    margin-bottom: 20px;
-  }
-}
-
-.status-loading {
-  color: $color-text-secondary;
-}
-
-.status-alert.error {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background-color: $color-status-missing-bg;
-  border: 1px solid $color-status-missing;
-  padding: 16px;
-  border-radius: $radius-md;
-  color: lighten(#ef4444, 25%);
-
-  p {
-    margin-top: 4px;
-    font-size: 13px;
-    color: $color-text-secondary;
-  }
-}
-
-.status-details {
+  padding: 36px;
+  text-align: center;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.status-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  .label {
-    color: $color-text-secondary;
-    font-size: 13px;
-  }
-}
-
-.code-value {
-  font-family: $font-family-mono;
-  background-color: rgba(0, 0, 0, 0.3);
-  padding: 2px 8px;
-  border-radius: $radius-sm;
-  color: $color-primary;
-  font-size: 13px;
-}
-
-.indicator {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-
-  &.indicator-current {
-    background-color: $color-status-current;
-  }
-
-  &.indicator-stale {
-    background-color: $color-status-stale;
-  }
-
-  &.indicator-missing {
-    background-color: $color-status-missing;
-  }
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: $radius-sm;
-  font-size: 12px;
-  font-weight: 500;
-
-  &.badge-current {
-    background-color: $color-status-current-bg;
-    color: $color-status-current;
-  }
-
-  &.badge-stale {
-    background-color: $color-status-stale-bg;
-    color: $color-status-stale;
-  }
-
-  &.badge-missing {
-    background-color: $color-status-missing-bg;
-    color: $color-status-missing;
-  }
-}
-
-.tokens-list {
-  display: flex;
   gap: 16px;
-  flex-wrap: wrap;
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  p {
+    font-size: 14px;
+    color: $color-text-secondary;
+  }
+}
+
+.embeddings-step-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - #{$header-height});
+}
+
+.embeddings-banner {
+  background-color: $color-surface;
+  border-bottom: 1px solid $color-border;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  p {
+    font-size: 12px;
+    color: $color-text-secondary;
+    margin-top: 2px;
+  }
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: $radius-md;
+  font-weight: 500;
+  cursor: pointer;
+
+  &.btn-primary {
+    background-color: $color-primary;
+    color: #000;
+    &:hover {
+      background-color: $color-primary-hover;
+    }
+  }
 }
 </style>
