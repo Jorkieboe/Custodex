@@ -175,5 +175,17 @@
   },
   {
     "path": "tests/frontend/schema.test.ts"
+  },
+  {
+    "path": "src/services/client.ts"
+  },
+  {
+    "path": "src/services/projects.ts"
+  },
+  {
+    "path": "src/services/nodes.ts"
+  },
+  {
+    "path": "src/services/schema.ts"
   }
 ]

@@ -3,6 +3,10 @@
     "src/components/schema/FieldCard.vue",
     "src/components/schema/SchemaDesigner.vue",
     "src/routers/schema.py",
+    "src/services/client.ts",
+    "src/services/nodes.ts",
+    "src/services/projects.ts",
+    "src/services/schema.ts",
     "tests/backend/test_schema.py",
     "tests/frontend/schema.test.ts"
   ]
