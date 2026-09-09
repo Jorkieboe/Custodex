@@ -12,6 +12,7 @@ import {
   splitProjectNode,
   mergeProjectNode,
   promoteProjectNode,
+  demoteProjectNode,
   detachSelectionToHeader,
   updateProjectNode
 } from '../services/api'
@@ -21,16 +22,11 @@ export type WorkspaceStep = 'ingestion' | 'chunks' | 'schema' | 'metadata' | 'em
 export const useWorkspaceStore = defineStore('workspace', () => {
   const currentProject = ref<Project | null>(null)
   const documents = ref<DocumentSummary[]>([])
-  const activeDocumentId = ref<string | null>(null)
   const nodes = ref<NodeItem[]>([])
   const selectedNodeIds = ref<Set<string>>(new Set())
   const currentStep = ref<WorkspaceStep>('chunks')
   const isLoading = ref<boolean>(false)
   const errorMessage = ref<string | null>(null)
-
-  const activeDocument = computed(() => {
-    return documents.value.find((d) => d.id === activeDocumentId.value) || null
-  })
 
   const currentEmbeddingCounts = computed(() => {
     let current = 0
@@ -51,12 +47,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       const proj = await fetchProjectById(projectId)
       currentProject.value = proj
       await reloadDocuments()
-      if (documents.value.length > 0) {
-        await selectDocument(documents.value[0].id)
-      } else {
-        nodes.value = []
-        activeDocumentId.value = null
-      }
+      await reloadNodes()
     } catch (err: any) {
       errorMessage.value = err.message || 'Failed to load project'
       throw err
@@ -71,30 +62,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     documents.value = docs
   }
 
-  async function selectDocument(documentId: string) {
-    if (!currentProject.value) return
-    activeDocumentId.value = documentId
-    selectedNodeIds.value.clear()
-    isLoading.value = true
-    try {
-      const fetchedNodes = await fetchProjectNodes(currentProject.value.id, documentId)
-      nodes.value = fetchedNodes
-    } catch (err: any) {
-      errorMessage.value = err.message || 'Failed to load document nodes'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
   async function uploadFiles(files: File[]) {
     if (!currentProject.value) return
     isLoading.value = true
     try {
       await uploadProjectDocuments(currentProject.value.id, files)
-      await reloadDocuments()
-      if (documents.value.length > 0 && !activeDocumentId.value) {
-        await selectDocument(documents.value[0].id)
-      }
+      await reloadNodes()
     } catch (err: any) {
       errorMessage.value = err.message || 'File upload failed'
       throw err
@@ -108,15 +81,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     isLoading.value = true
     try {
       await deleteProjectDocument(currentProject.value.id, documentId)
-      await reloadDocuments()
-      if (activeDocumentId.value === documentId) {
-        if (documents.value.length > 0) {
-          await selectDocument(documents.value[0].id)
-        } else {
-          activeDocumentId.value = null
-          nodes.value = []
-        }
-      }
+      await reloadNodes()
     } catch (err: any) {
       errorMessage.value = err.message || 'Failed to delete document'
     } finally {
@@ -204,6 +169,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   async function promoteNode(nodeId: string) {
     if (!currentProject.value) return
+    console.log('tja')
     const originalNodes = [...nodes.value]
     try {
       const promoted = await promoteProjectNode(currentProject.value.id, nodeId)
@@ -212,6 +178,20 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     } catch (err: any) {
       nodes.value = originalNodes
       errorMessage.value = err.message || 'Promotion failed'
+      throw err
+    }
+  }
+
+  async function demoteNode(nodeId: string) {
+    if (!currentProject.value) return
+    const originalNodes = [...nodes.value]
+    try {
+      const demoted = await demoteProjectNode(currentProject.value.id, nodeId)
+      await reloadNodes()
+      return demoted
+    } catch (err: any) {
+      nodes.value = originalNodes
+      errorMessage.value = err.message || 'Demotion failed'
       throw err
     }
   }
@@ -236,8 +216,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   async function reloadNodes() {
-    if (!currentProject.value || !activeDocumentId.value) return
-    const fetched = await fetchProjectNodes(currentProject.value.id, activeDocumentId.value)
+    if (!currentProject.value) return
+    const fetched = await fetchProjectNodes(currentProject.value.id)
     nodes.value = fetched
     await reloadDocuments()
   }
@@ -245,8 +225,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   return {
     currentProject,
     documents,
-    activeDocumentId,
-    activeDocument,
     nodes,
     selectedNodeIds,
     currentStep,
@@ -255,7 +233,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     currentEmbeddingCounts,
     loadProject,
     reloadDocuments,
-    selectDocument,
     uploadFiles,
     removeDocument,
     setStep,
@@ -266,6 +243,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     splitNode,
     mergeNode,
     promoteNode,
+    demoteNode,
     detachSelection,
     reloadNodes
   }

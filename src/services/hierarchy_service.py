@@ -216,45 +216,58 @@ def merge_nodes(conn: sqlite3.Connection, lead_node_id: str) -> NodeModel:
         embedding_status=new_status,
     )
 
-def promote_node_to_header(conn: sqlite3.Connection, node_id: str) -> NodeModel:
+def change_node_type(conn: sqlite3.Connection, node_id: str, promote: bool) -> NodeModel:
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM nodes WHERE id = ?;", (node_id,))
     row = cursor.fetchone()
     if not row:
         raise ValueError(f"Node with id {node_id} not found")
 
+    target_type = "header" if promote else "paragraph"
+    if row["node_type"] == target_type:
+        return NodeModel(**dict(row))
+
     doc_id = row["document_id"]
     current_order = row["order_index"]
     current_parent = row["parent_id"]
 
-    # Subsequent sibling paragraphs that share current_parent get re-parented to this newly promoted header
-    cursor.execute(
-        """
-        SELECT id, node_type, parent_id, order_index FROM nodes
-        WHERE document_id = ? AND order_index > ?
-        ORDER BY order_index ASC;
-        """,
-        (doc_id, current_order),
-    )
-    subsequent_nodes = cursor.fetchall()
-
-    reparent_ids: List[str] = []
-    for sn in subsequent_nodes:
-        if sn["node_type"] == "header":
-            break
-        if sn["parent_id"] == current_parent:
-            if not validate_acyclic_parent(conn, sn["id"], node_id):
-                continue
-            reparent_ids.append(sn["id"])
+    if promote:
+        # Subsequent sibling paragraphs that share current_parent get re-parented to this newly promoted header
+        cursor.execute(
+            """
+            SELECT id, node_type, parent_id, order_index FROM nodes
+            WHERE document_id = ? AND order_index > ?
+            ORDER BY order_index ASC;
+            """,
+            (doc_id, current_order),
+        )
+        subsequent_nodes = cursor.fetchall()
+        reparent_ids: List[str] = []
+        for sn in subsequent_nodes:
+            if sn["node_type"] == "header":
+                break
+            if sn["parent_id"] == current_parent:
+                if not validate_acyclic_parent(conn, sn["id"], node_id):
+                    continue
+                reparent_ids.append(sn["id"])
+        new_children_parent = node_id
+    else:
+        # Existing child nodes under this header get re-parented to the parent above
+        cursor.execute(
+            "SELECT id FROM nodes WHERE document_id = ? AND parent_id = ?;",
+            (doc_id, node_id),
+        )
+        reparent_ids = [r["id"] for r in cursor.fetchall()]
+        new_children_parent = current_parent
 
     with conn:
         conn.execute(
             """
             UPDATE nodes
-            SET node_type = 'header', embedding_status = 'stale'
+            SET node_type = ?, embedding_status = 'stale'
             WHERE id = ?;
             """,
-            (node_id,),
+            (target_type, node_id),
         )
 
         if reparent_ids:
@@ -265,7 +278,7 @@ def promote_node_to_header(conn: sqlite3.Connection, node_id: str) -> NodeModel:
                 SET parent_id = ?, embedding_status = 'stale'
                 WHERE id IN ({placeholders});
                 """,
-                [node_id] + reparent_ids,
+                [new_children_parent] + reparent_ids,
             )
 
         cascade_header_stale_status(conn, node_id)
@@ -274,11 +287,17 @@ def promote_node_to_header(conn: sqlite3.Connection, node_id: str) -> NodeModel:
         id=node_id,
         document_id=doc_id,
         parent_id=current_parent,
-        node_type="header",
+        node_type=target_type,
         text_content=row["text_content"],
         order_index=current_order,
         embedding_status="stale",
     )
+
+def promote_node_to_header(conn: sqlite3.Connection, node_id: str) -> NodeModel:
+    return change_node_type(conn, node_id, promote=True)
+
+def demote_header_to_node(conn: sqlite3.Connection, node_id: str) -> NodeModel:
+    return change_node_type(conn, node_id, promote=False)
 
 def detach_selection_to_header(conn: sqlite3.Connection, node_id: str, selection_start: int, selection_end: int) -> List[NodeModel]:
     cursor = conn.cursor()

@@ -1,0 +1,161 @@
+[
+  {
+    "path": "go.bat"
+  },
+  {
+    "path": "README.md"
+  },
+  {
+    "path": "requirements.txt"
+  },
+  {
+    "path": "pytest.ini"
+  },
+  {
+    "path": "tests/test_smoke.py"
+  },
+  {
+    "path": "package.json"
+  },
+  {
+    "path": "vite.config.ts"
+  },
+  {
+    "path": "vitest.config.ts"
+  },
+  {
+    "path": "tsconfig.json"
+  },
+  {
+    "path": "tests/frontend/smoke.test.ts"
+  },
+  {
+    "path": "config.json"
+  },
+  {
+    "path": "llm.md"
+  },
+  {
+    "path": "version.txt"
+  },
+  {
+    "path": "concept.md"
+  },
+  {
+    "path": "architecture.md"
+  },
+  {
+    "path": "pyproject.toml"
+  },
+  {
+    "path": "src/__init__.py"
+  },
+  {
+    "path": "src/config.py"
+  },
+  {
+    "path": "src/main.py"
+  },
+  {
+    "path": "tests/backend/test_api_status.py"
+  },
+  {
+    "path": "src/styles/variables.scss"
+  },
+  {
+    "path": "src/styles/main.scss"
+  },
+  {
+    "path": "src/services/api.ts"
+  },
+  {
+    "path": "index.html"
+  },
+  {
+    "path": "src/main.ts"
+  },
+  {
+    "path": "src/App.vue"
+  },
+  {
+    "path": "tests/frontend/api.test.ts"
+  },
+  {
+    "path": "src/db/connection.py"
+  },
+  {
+    "path": "src/db/migrations.py"
+  },
+  {
+    "path": "src/db/models.py"
+  },
+  {
+    "path": "src/db/hierarchy.py"
+  },
+  {
+    "path": "tests/backend/test_database.py"
+  },
+  {
+    "path": "tests/backend/test_hierarchy.py"
+  },
+  {
+    "path": "src/parsers/__init__.py"
+  },
+  {
+    "path": "src/parsers/docx_parser.py"
+  },
+  {
+    "path": "src/parsers/pdf_parser.py"
+  },
+  {
+    "path": "src/parsers/text_parser.py"
+  },
+  {
+    "path": "src/routers/nodes.py"
+  },
+  {
+    "path": "src/routers/projects.py"
+  },
+  {
+    "path": "src/services/hierarchy_service.py"
+  },
+  {
+    "path": "src/routers/documents.py"
+  },
+  {
+    "path": "src/services/project_manager.py"
+  },
+  {
+    "path": "tests/backend/test_ingestion_and_mutations.py"
+  },
+  {
+    "path": "src/components/canvas/ChunkCanvas.vue"
+  },
+  {
+    "path": "src/components/canvas/ChunkNodeView.vue"
+  },
+  {
+    "path": "src/components/canvas/HeaderNodeView.vue"
+  },
+  {
+    "path": "src/components/IngestionView.vue"
+  },
+  {
+    "path": "src/components/ProjectHub.vue"
+  },
+  {
+    "path": "src/components/SettingsModal.vue"
+  },
+  {
+    "path": "src/components/StepNavigator.vue"
+  },
+  {
+    "path": "src/routers/config.py"
+  },
+  {
+    "path": "src/stores/workspace.ts"
+  },
+  {
+    "path": "tests/frontend/workspace.test.ts"
+  }
+]

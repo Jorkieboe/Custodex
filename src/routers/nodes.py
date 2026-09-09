@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 from src.db.models import NodeModel
 from src.services.hierarchy_service import (
+    change_node_type,
+    demote_header_to_node,
     detach_selection_to_header,
     merge_nodes,
     promote_node_to_header,
@@ -26,24 +28,18 @@ class DetachSelectionPayload(BaseModel):
     selection_end: int
 
 @router.get("", response_model=List[NodeModel])
-async def get_project_nodes(project_id: str, document_id: Optional[str] = None):
+async def get_project_nodes(project_id: str):
     conn = get_project_connection(project_id)
     cursor = conn.cursor()
-    if document_id:
-        cursor.execute(
-            "SELECT * FROM nodes WHERE document_id = ? ORDER BY order_index ASC;",
-            (document_id,),
-        )
-    else:
-        cursor.execute(
-            """
-            SELECT n.* FROM nodes n
-            JOIN documents d ON n.document_id = d.id
-            WHERE d.project_id = ?
-            ORDER BY d.order_index ASC, n.order_index ASC;
-            """,
-            (project_id,),
-        )
+    cursor.execute(
+        """
+        SELECT n.* FROM nodes n
+        JOIN documents d ON n.document_id = d.id
+        WHERE d.project_id = ?
+        ORDER BY d.order_index ASC, n.order_index ASC;
+        """,
+        (project_id,),
+    )
     rows = cursor.fetchall()
     return [NodeModel(**dict(r)) for r in rows]
 
@@ -78,8 +74,17 @@ async def api_merge_node(project_id: str, node_id: str):
 async def api_promote_node(project_id: str, node_id: str):
     conn = get_project_connection(project_id)
     try:
-        promoted = promote_node_to_header(conn, node_id)
+        promoted = change_node_type(conn, node_id, promote=True)
         return promoted
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{node_id}/demote", response_model=NodeModel)
+async def api_demote_node(project_id: str, node_id: str):
+    conn = get_project_connection(project_id)
+    try:
+        demoted = change_node_type(conn, node_id, promote=False)
+        return demoted
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

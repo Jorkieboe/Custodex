@@ -59,6 +59,39 @@ watch(
   }
 )
 
+const contextMenuItems = computed(() => {
+  const items = []
+
+  if (store.currentStep === 'chunks') {
+    items.push(
+      {
+        label: '✂️ Split Chunk Here',
+        action: handleContextSplit,
+      },
+      {
+        label: '↥ Promote to Header',
+        action: () => emit('promote', props.node.id),
+      },
+    )
+
+    if (props.canMerge) {
+      items.push({
+        label: '⤓ Merge with Below',
+        action: () => emit('merge', props.node.id),
+      })
+    }
+  }
+
+  if (store.currentStep === 'embeddings') {
+    items.push({
+        label: 'Generate Embeddings',
+        action: () => {},
+      })
+  }
+
+  return items
+})
+
 function setSegmentRef(el: any, idx: number) {
   if (el) {
     segmentRefs.value[idx] = el as HTMLDivElement
@@ -292,7 +325,7 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
         </span>
       </div>
 
-      <div class="chunk-tools">
+      <div class="chunk-tools" v-if="store.currentStep == 'chunks'">
         <button
           v-if="canMerge"
           class="btn-tool"
@@ -317,7 +350,7 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
         <div
           :ref="el => setSegmentRef(el, idx)"
           class="chunk-editable-content"
-          contenteditable="true"
+          :contenteditable="store.currentStep == 'chunks'"
           spellcheck="false"
           @input="e => handleSegmentInput(idx, e)"
           @keydown="e => handleSegmentKeyDown(idx, e)"
@@ -327,7 +360,7 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
 
         <!-- Interactive hover split divider positioned directly between separated text divs -->
         <div
-          v-if="idx < segments.length - 1"
+          v-if="idx < segments.length - 1 && store.currentStep == 'chunks'"
           class="hover-split-divider"
           @click="handleSplitBetween(idx)"
           title="Click to split chunk here"
@@ -340,7 +373,7 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
 
     <!-- Right-Click Context Menu -->
     <div
-      v-if="contextMenuVisible"
+      v-if="contextMenuVisible && contextMenuItems.length > 0"
       class="context-menu-backdrop"
       @click="closeContextMenu"
     >
@@ -349,19 +382,14 @@ function handleSegmentMouseUp(idx: number, event: MouseEvent) {
         :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
         @click.stop
       >
-        <button class="context-item" @click="handleContextSplit">
-          ✂️ Split Chunk Here
-        </button>
-        <button class="context-item" @click="emit('promote', node.id); closeContextMenu()">
-          ↥ Promote to Header
-        </button>
         <button
-          v-if="canMerge"
+          v-for="item in contextMenuItems"
+          :key="item.label"
           class="context-item"
-          @click="emit('merge', node.id); closeContextMenu()"
+          @click="item.action"
         >
-          ⤓ Merge with Below
-        </button>
+          {{ item.label }}
+    </button>
       </div>
     </div>
   </div>

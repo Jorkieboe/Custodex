@@ -12,6 +12,8 @@ from src.parsers.docx_parser import parse_docx
 from src.parsers.text_parser import parse_markdown, parse_plain_text
 from src.parsers.pdf_parser import parse_pdf_fallback
 from src.services.hierarchy_service import (
+    change_node_type,
+    demote_header_to_node,
     detach_selection_to_header,
     merge_nodes,
     promote_node_to_header,
@@ -249,6 +251,44 @@ def test_promote_node_reparents_siblings_and_cascades_stale(memory_project):
     assert children["c2"][0] == "p_target"
     assert children["c2"][1] == "stale"
 
+def test_demote_header_reparents_children_to_parent(memory_project):
+    project_id, conn = memory_project
+
+    with conn:
+        conn.execute(
+            "INSERT INTO nodes (id, document_id, parent_id, node_type, text_content, order_index, embedding_status) VALUES ('root_h', 'doc_1', NULL, 'header', 'Root Header', 0, 'current');"
+        )
+        conn.execute(
+            "INSERT INTO nodes (id, document_id, parent_id, node_type, text_content, order_index, embedding_status) VALUES ('sub_h', 'doc_1', 'root_h', 'header', 'Sub Header', 1, 'current');"
+        )
+        conn.execute(
+            "INSERT INTO nodes (id, document_id, parent_id, node_type, text_content, order_index, embedding_status) VALUES ('c1', 'doc_1', 'sub_h', 'paragraph', 'Child 1', 2, 'current');"
+        )
+        conn.execute(
+            "INSERT INTO nodes (id, document_id, parent_id, node_type, text_content, order_index, embedding_status) VALUES ('c2', 'doc_1', 'sub_h', 'paragraph', 'Child 2', 3, 'current');"
+        )
+
+    demoted = demote_header_to_node(conn, "sub_h")
+    assert demoted.node_type == "paragraph"
+    assert demoted.parent_id == "root_h"
+    assert demoted.embedding_status == "stale"
+
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, parent_id, embedding_status FROM nodes WHERE id IN ('c1', 'c2');")
+    children = {r["id"]: (r["parent_id"], r["embedding_status"]) for r in cursor.fetchall()}
+
+    assert children["c1"][0] == "root_h"
+    assert children["c1"][1] == "stale"
+    assert children["c2"][0] == "root_h"
+    assert children["c2"][1] == "stale"
+
+    # Verify change_node_type with explicit boolean argument
+    promoted_back = change_node_type(conn, "sub_h", promote=True)
+    assert promoted_back.node_type == "header"
+
+    demoted_again = change_node_type(conn, "sub_h", promote=False)
+    assert demoted_again.node_type == "paragraph"
+
 def test_detach_selection_to_header(memory_project):
     project_id, conn = memory_project
 
@@ -299,7 +339,7 @@ def test_document_and_node_api_routes(memory_project):
     assert len(doc_list) >= 2
 
     # Query nodes
-    nodes_resp = client.get(f"/api/projects/{project_id}/nodes?document_id={new_doc_id}")
+    nodes_resp = client.get(f"/api/projects/{project_id}/nodes")
     assert nodes_resp.status_code == 200
     nodes = nodes_resp.json()
     assert len(nodes) == 2
@@ -324,3 +364,12 @@ def test_document_and_node_api_routes(memory_project):
     assert patch_resp.status_code == 200
     updated_node = patch_resp.json()
     assert "Edited chunk content" in updated_node["text_content"]
+
+    # Test promote and demote endpoints
+    promote_resp = client.post(f"/api/projects/{project_id}/nodes/{paragraph_node['id']}/promote")
+    assert promote_resp.status_code == 200
+    assert promote_resp.json()["node_type"] == "header"
+
+    demote_resp = client.post(f"/api/projects/{project_id}/nodes/{paragraph_node['id']}/demote")
+    assert demote_resp.status_code == 200
+    assert demote_resp.json()["node_type"] == "paragraph"

@@ -111,11 +111,8 @@ export async function updateProjectNode(projectId: string, nodeId: string, textC
   return response.data
 }
 
-export async function fetchProjectNodes(projectId: string, documentId?: string): Promise<NodeItem[]> {
-  const url = documentId
-    ? `/api/projects/${projectId}/nodes?document_id=${documentId}`
-    : `/api/projects/${projectId}/nodes`
-  const response = await apiClient.get<NodeItem[]>(url)
+export async function fetchProjectNodes(projectId: string): Promise<NodeItem[]> {
+  const response = await apiClient.get<NodeItem[]>(`/api/projects/${projectId}/nodes`)
   return response.data
 }
 
@@ -134,6 +131,11 @@ export async function mergeProjectNode(projectId: string, nodeId: string): Promi
 
 export async function promoteProjectNode(projectId: string, nodeId: string): Promise<NodeItem> {
   const response = await apiClient.post<NodeItem>(`/api/projects/${projectId}/nodes/${nodeId}/promote`)
+  return response.data
+}
+
+export async function demoteProjectNode(projectId: string, nodeId: string): Promise<NodeItem> {
+  const response = await apiClient.post<NodeItem>(`/api/projects/${projectId}/nodes/${nodeId}/demote`)
   return response.data
 }
 

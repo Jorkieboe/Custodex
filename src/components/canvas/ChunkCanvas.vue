@@ -98,8 +98,8 @@ function canMerge(index: number): boolean {
 
     <!-- Visual Canvas Content -->
     <div class="canvas-scroll-container">
-      <div v-if="!store.activeDocument" class="canvas-empty">
-        <p>No document selected. Choose or import a document from Ingestion.</p>
+      <div v-if="store.documents.length === 0" class="canvas-empty">
+        <p>No documents imported yet. Import documents from Ingestion to get started.</p>
       </div>
 
       <div v-else-if="store.nodes.length === 0" class="canvas-empty">
@@ -112,7 +112,7 @@ function canMerge(index: number): boolean {
             v-if="node.node_type === 'header'"
             :node="node"
             :child-count="headerChildCounts[node.id] || 0"
-            @demote="store.promoteNode"
+            @demote="id => store.demoteNode(id)"
           />
           <ChunkNodeView
             v-else
@@ -128,7 +128,7 @@ function canMerge(index: number): boolean {
     </div>
 
     <!-- Floating Text Selection Toolbar -->
-    <div
+    <!-- <div
       v-if="floatingToolbarVisible"
       class="floating-selection-toolbar"
       :style="{ top: `${floatingToolbarPos.y}px`, left: `${floatingToolbarPos.x}px` }"
@@ -140,7 +140,7 @@ function canMerge(index: number): boolean {
       <button class="float-btn" @click="handleSplitFromSelection">
         ✂ Split Chunk Here
       </button>
-    </div>
+    </div> -->
   </div>
 </template>
 

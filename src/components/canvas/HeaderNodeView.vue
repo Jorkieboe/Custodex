@@ -72,6 +72,7 @@ function handleBlur() {
           {{ childCount }} {{ childCount === 1 ? 'chunk' : 'chunks' }}
         </span>
         <button
+         v-if="store.currentStep == 'chunks'"
           class="demote-btn"
           @click="emit('demote', node.id)"
           title="Demote header to paragraph chunk"

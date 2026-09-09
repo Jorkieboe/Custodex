@@ -68,8 +68,7 @@ async function handleDrop(event: DragEvent) {
           v-for="doc in store.documents"
           :key="doc.id"
           class="doc-card"
-          :class="{ active: store.activeDocumentId === doc.id }"
-          @click="store.selectDocument(doc.id)"
+   
         >
           <div class="doc-main">
             <span class="format-badge">{{ doc.file_type.toUpperCase() }}</span>
@@ -82,7 +81,7 @@ async function handleDrop(event: DragEvent) {
           <div class="doc-actions">
             <button
               class="btn btn-sm btn-action"
-              @click.stop="store.selectDocument(doc.id); store.setStep('chunks')"
+              @click.stop="store.setStep('chunks')"
             >
               Open in Canvas
             </button>
@@ -180,15 +179,6 @@ async function handleDrop(event: DragEvent) {
   border-radius: $radius-md;
   cursor: pointer;
   transition: all 0.15s ease;
-
-  &:hover {
-    border-color: $color-primary;
-  }
-
-  &.active {
-    border-color: $color-primary;
-    background-color: rgba(56, 189, 248, 0.05);
-  }
 }
 
 .doc-main {

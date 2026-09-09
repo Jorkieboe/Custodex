@@ -2,7 +2,7 @@
   "project_name": "Custodex",
   "project_color": "#0D9488",
   "project_font_color": "light",
-  "active_profile": "default",
+  "active_profile": "no-todo",
   "known_files": [
     "README.md",
     "architecture.md",
