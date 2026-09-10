@@ -7,7 +7,19 @@ import ChunkNodeView from './ChunkNodeView.vue'
 
 const store = useWorkspaceStore()
 
+const isAutoSplitting = ref(false)
 const floatingToolbarVisible = ref(false)
+
+async function handleBatchAutoSplit() {
+  if (store.selectedNodeIds.size === 0) return
+  isAutoSplitting.value = true
+  try {
+    const nodeIds = Array.from(store.selectedNodeIds)
+    await store.requestSemanticSplitPreview(nodeIds)
+  } finally {
+    isAutoSplitting.value = false
+  }
+}
 const floatingToolbarPos = ref({ x: 0, y: 0 })
 const activeSelection = ref<{
   nodeId: string
@@ -74,6 +86,66 @@ function canMerge(index: number): boolean {
 
 <template>
   <div class="chunk-canvas-wrapper" @click="clearSelection">
+    <!-- Autosplit Token Range Configuration Bar -->
+    <div v-if="store.nodes.length > 0" class="autosplit-config-bar">
+      <div class="config-title">
+        <span class="bolt-icon">⚡</span>
+        <span>Chunk Token Budget:</span>
+      </div>
+
+      <div class="preset-buttons">
+        <button
+          type="button"
+          class="btn-preset"
+          :class="{ active: store.autoSplitPreset === 'fine' }"
+          @click="store.setAutoSplitRange(100, 150, 'fine')"
+        >
+          100–150 tok
+        </button>
+        <button
+          type="button"
+          class="btn-preset"
+          :class="{ active: store.autoSplitPreset === 'standard' }"
+          @click="store.setAutoSplitRange(200, 350, 'standard')"
+        >
+          200–350 tok
+        </button>
+        <button
+          type="button"
+          class="btn-preset"
+          :class="{ active: store.autoSplitPreset === 'large' }"
+          @click="store.setAutoSplitRange(400, 500, 'large')"
+        >
+          400–500 tok
+        </button>
+      </div>
+
+      <div class="custom-token-inputs">
+        <label>
+          Min:
+          <input
+            type="number"
+            v-model.number="store.autoSplitMinTokens"
+            min="20"
+            max="1500"
+            step="10"
+            @input="store.autoSplitPreset = 'custom'"
+          />
+        </label>
+        <label>
+          Max:
+          <input
+            type="number"
+            v-model.number="store.autoSplitMaxTokens"
+            min="50"
+            max="2500"
+            step="10"
+            @input="store.autoSplitPreset = 'custom'"
+          />
+        </label>
+      </div>
+    </div>
+
     <!-- Multi-Chunk Selection Toolbar -->
     <div v-if="store.nodes.length > 0" class="selection-action-bar">
       <div class="selection-info">
@@ -88,9 +160,27 @@ function canMerge(index: number): boolean {
       </div>
 
       <div v-if="store.selectedNodeIds.size > 0" class="batch-buttons">
-        <span class="batch-hint">Batch operations available for selected chunks</span>
+        <button
+          class="btn btn-sm btn-primary"
+          :disabled="isAutoSplitting"
+          @click="handleBatchAutoSplit"
+        >
+          {{ isAutoSplitting ? 'Analyzing...' : `⚡ Auto-Split (${store.selectedNodeIds.size})` }}
+        </button>
         <button class="btn btn-sm btn-secondary" @click="store.clearNodeSelection">
           Deselect
+        </button>
+      </div>
+
+      <div v-if="store.semanticSplitProposals.size > 0" class="proposals-toolbar-group">
+        <span class="proposals-indicator">
+          ⚡ {{ store.semanticSplitProposals.size }} chunk(s) have proposed splits
+        </span>
+        <button class="btn btn-sm btn-success" @click="store.acceptAllProposedSplits">
+          ✓ Accept All Proposed Splits
+        </button>
+        <button class="btn btn-sm btn-secondary" @click="store.semanticSplitProposals.clear()">
+          Dismiss Previews
         </button>
       </div>
     </div>
@@ -153,6 +243,86 @@ function canMerge(index: number): boolean {
   height: calc(100vh - #{$header-height});
   background-color: $color-bg;
   position: relative;
+}
+
+.autosplit-config-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 24px;
+  background-color: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+}
+
+.config-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: $color-text-secondary;
+
+  .bolt-icon {
+    color: $color-primary;
+  }
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-preset {
+  background-color: $color-surface;
+  color: $color-text-secondary;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    color: $color-text-primary;
+    border-color: $color-primary;
+  }
+
+  &.active {
+    background-color: rgba(56, 189, 248, 0.15);
+    border-color: $color-primary;
+    color: $color-primary;
+    font-weight: 700;
+  }
+}
+
+.custom-token-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: $color-text-muted;
+    font-size: 11px;
+  }
+
+  input {
+    width: 58px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    padding: 2px 6px;
+    color: $color-text-primary;
+    font-size: 11px;
+    outline: none;
+
+    &:focus {
+      border-color: $color-primary;
+    }
+  }
 }
 
 .selection-action-bar {
@@ -251,5 +421,30 @@ function canMerge(index: number): boolean {
       background-color: lighten(#334155, 5%);
     }
   }
+
+  &.btn-success {
+    background-color: #22c55e;
+    color: #000;
+    font-weight: 600;
+    &:hover {
+      background-color: #16a34a;
+    }
+  }
+}
+
+.proposals-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(56, 189, 248, 0.1);
+  padding: 4px 12px;
+  border-radius: $radius-sm;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.proposals-indicator {
+  font-size: 12px;
+  font-weight: 600;
+  color: $color-primary;
 }
 </style>

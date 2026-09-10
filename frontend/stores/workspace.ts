@@ -26,7 +26,12 @@ import {
   type MetadataJobStatus,
   fetchNodeMetadata,
   updateNodeMetadata,
-  startMetadataJob
+  startMetadataJob,
+  type NodeSemanticSplitPreview,
+  previewSemanticSplits,
+  acceptSemanticSplits,
+  checkEmbeddingModelSwitch,
+  fetchEmbeddingStatus
 } from '../services/api'
 
 export type WorkspaceStep = 'ingestion' | 'chunks' | 'schema' | 'metadata' | 'embeddings' | 'export'
@@ -42,7 +47,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const isBatchModalOpen = ref(false)
   const nodesWithMetadata = ref<Set<string>>(new Set())
   const isGeneratingSingle = ref<string | null>(null)
+  const semanticSplitProposals = ref<Map<string, NodeSemanticSplitPreview>>(new Map())
+  const isEmbeddingRefreshing = ref(false)
+  const autoSplitMinTokens = ref<number>(200)
+  const autoSplitMaxTokens = ref<number>(350)
+  const autoSplitPreset = ref<'fine' | 'standard' | 'large' | 'custom'>('standard')
   let sseEventSource: EventSource | null = null
+  let embeddingEventSource: EventSource | null = null
 
   const metadataJobStatus = ref<MetadataJobStatus>({
     status: 'idle',
@@ -301,7 +312,136 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     startAutogeneration,
     cancelAutogeneration,
     loadProjectMetadataOverview,
-    isNodeFullyExtracted
+    isNodeFullyExtracted,
+    semanticSplitProposals,
+    isEmbeddingRefreshing,
+    autoSplitMinTokens,
+    autoSplitMaxTokens,
+    autoSplitPreset,
+    setAutoSplitRange,
+    requestSemanticSplitPreview,
+    acceptProposedSplit,
+    acceptAllProposedSplits,
+    rejectProposedSplit,
+    refreshEmbeddingsStream,
+    validateModelSwitch
+  }
+
+  function setAutoSplitRange(min: number, max: number, preset: 'fine' | 'standard' | 'large' | 'custom' = 'custom') {
+    autoSplitMinTokens.value = min
+    autoSplitMaxTokens.value = max
+    autoSplitPreset.value = preset
+  }
+
+  async function requestSemanticSplitPreview(nodeIds: string[]) {
+    if (!currentProject.value || nodeIds.length === 0) return
+    const previews = await previewSemanticSplits(
+      currentProject.value.id,
+      nodeIds,
+      autoSplitMinTokens.value,
+      autoSplitMaxTokens.value
+    )
+    for (const prev of previews) {
+      if (prev.proposed_splits.length > 0) {
+        semanticSplitProposals.value.set(prev.node_id, prev)
+      }
+    }
+    return previews
+  }
+
+  async function acceptProposedSplit(nodeId: string, splitIndices?: number[]) {
+    if (!currentProject.value) return
+    const proposal = semanticSplitProposals.value.get(nodeId)
+    const indices = splitIndices || proposal?.proposed_splits.map(s => s.split_index) || []
+    if (indices.length === 0) return
+
+    await acceptSemanticSplits(currentProject.value.id, [{ node_id: nodeId, split_indices: indices }])
+    semanticSplitProposals.value.delete(nodeId)
+    await reloadNodes()
+  }
+
+  async function acceptAllProposedSplits() {
+    if (!currentProject.value) return
+    const items: { node_id: string; split_indices: number[] }[] = []
+    for (const [nId, prev] of semanticSplitProposals.value.entries()) {
+      const indices = prev.proposed_splits.map(s => s.split_index)
+      if (indices.length > 0) {
+        items.push({ node_id: nId, split_indices: indices })
+      }
+    }
+    if (items.length === 0) return
+
+    await acceptSemanticSplits(currentProject.value.id, items)
+    semanticSplitProposals.value.clear()
+    await reloadNodes()
+  }
+
+  function rejectProposedSplit(nodeId: string) {
+    semanticSplitProposals.value.delete(nodeId)
+  }
+
+  async function validateModelSwitch(newEmbeddingModel: string, confirm: boolean = false) {
+    if (!currentProject.value) return
+    const res = await checkEmbeddingModelSwitch(currentProject.value.id, newEmbeddingModel, confirm)
+    if (res.action === 'switched') {
+      currentProject.value.embedding_model = newEmbeddingModel
+      await reloadNodes()
+    }
+    return res
+  }
+
+  function refreshEmbeddingsStream() {
+    if (!currentProject.value) return
+    if (embeddingEventSource) {
+      embeddingEventSource.close()
+      embeddingEventSource = null
+    }
+
+    isEmbeddingRefreshing.value = true
+    const baseUrl = apiClient.defaults.baseURL || 'http://localhost:8000'
+    const sseUrl = `${baseUrl}/api/projects/${currentProject.value.id}/embeddings/stream?batch_size=16`
+
+    embeddingEventSource = new EventSource(sseUrl)
+
+    embeddingEventSource.addEventListener('progress', (event: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(event.data)
+        if (parsed.current_node_id) {
+          const target = nodes.value.find(n => n.id === parsed.current_node_id)
+          if (target) {
+            target.embedding_status = 'current'
+          }
+        }
+      } catch (err) {
+        console.error('Failed to parse embedding progress SSE:', err)
+      }
+    })
+
+    embeddingEventSource.addEventListener('complete', async () => {
+      isEmbeddingRefreshing.value = false
+      if (embeddingEventSource) {
+        embeddingEventSource.close()
+        embeddingEventSource = null
+      }
+      await reloadNodes()
+    })
+
+    embeddingEventSource.addEventListener('failure', (event: MessageEvent) => {
+      isEmbeddingRefreshing.value = false
+      if (embeddingEventSource) {
+        embeddingEventSource.close()
+        embeddingEventSource = null
+      }
+      console.error('Embedding refresh failure event:', event.data)
+    })
+
+    embeddingEventSource.onerror = () => {
+      isEmbeddingRefreshing.value = false
+      if (embeddingEventSource) {
+        embeddingEventSource.close()
+        embeddingEventSource = null
+      }
+    }
   }
 
   function isNodeFullyExtracted(metaItems: ChunkMetadataItem[], schemaFieldsList?: SchemaField[]): boolean {

@@ -202,5 +202,14 @@
   },
   {
     "path": "frontend/services/metadata.ts"
+  },
+  {
+    "path": "backend/services/semantic_splitter.py"
+  },
+  {
+    "path": "tests/backend/test_embeddings_and_splitting.py"
+  },
+  {
+    "path": "frontend/services/embeddings.ts"
   }
 ]

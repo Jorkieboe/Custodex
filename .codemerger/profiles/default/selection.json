@@ -130,5 +130,26 @@
   },
   {
     "path": "frontend/stores/workspace.ts"
+  },
+  {
+    "path": "backend/routers/nodes.py"
+  },
+  {
+    "path": "backend/routers/embeddings.py"
+  },
+  {
+    "path": "backend/services/embedding_service.py"
+  },
+  {
+    "path": "backend/services/semantic_splitter.py"
+  },
+  {
+    "path": "frontend/services/embeddings.ts"
+  },
+  {
+    "path": "tests/backend/test_embeddings_and_splitting.py"
+  },
+  {
+    "path": "tests/frontend/embeddings.test.ts"
   }
 ]

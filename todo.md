@@ -185,46 +185,46 @@ graph TD
 
 *Sequencing Note: Semantic auto-splitting is introduced here because it leverages LM Studio embedding distance evaluations. It acts as an enhancement on top of the already functional manual chunking canvas from Section 4.*
 
-- [ ] **Semantic Auto-Splitting Engine:**
-  - [ ] Integrate LangChain semantic splitters evaluated on embedding distance thresholds.
-  - [ ] Implement `POST /api/projects/{id}/nodes/semantic-split-preview`:
-    - [ ] Calculate candidate split boundaries strictly within selected chunk boundaries without mutating authoritative state.
-    - [ ] Return candidate boundary positions, slices, and confidence scores to the UI.
-  - [ ] Build In-Canvas Semantic Split Reviewer (replacing modal dialogs):
-    - [ ] Inserts proposed split boundaries directly into the Tiptap canvas as a two-enter break featuring a dotted horizontal line across the gap.
-    - [ ] Displays centered inline "Accept" and "Reject" action buttons along the dotted divider, doubling as a visual tutorial demonstrating manual double-enter splitting.
-    - [ ] Provides an "Accept All" action in the selection toolbar allowing users to batch-commit all proposed split boundaries without inspecting each one individually.
-  - [ ] Implement `POST /api/projects/{id}/nodes/semantic-split-accept` supporting both single boundary acceptance and batch "Accept All":
-    - [ ] Converts accepted boundaries into authoritative nodes: original slice retains UUID and `order_index`; new slices receive fresh UUIDv4s and incremented `order_index` values.
-    - [ ] Adjusts downstream document `order_index` contiguity.
-  - [ ] Implement candidate rejection handling that cleans up proposed inline break elements and restores unified chunk flow without mutating backend state.
-- [ ] **Contextual Embedding Engine:**
-  - [ ] Implement contextual payload compiler:
-    - [ ] Resolves ancestor headers via recursive `parent_id` lookups.
-    - [ ] Formats payload: `{document_title}\n\n## {header_title}\n### {subheader_title}\n\n{chunk_text}`.
-  - [ ] Implement partitioned embedding execution:
-    - [ ] Query target chunks `WHERE embedding_status != 'current'`.
-    - [ ] Split targets into sequential parts.
-    - [ ] Query LM Studio `/v1/embeddings` using the OpenAI SDK.
-    - [ ] Store float32 binary vectors into `node_embeddings` and update `nodes.embedding_status = 'current'` per completed partition.
-  - [ ] Implement FAISS CPU Index synchronizer:
-    - [ ] Maintain synchronized FAISS Flat index (`faiss.IndexFlatIP` or `IndexFlatL2`).
-    - [ ] Rebuild serialized index cache when all current embeddings are verified.
-- [ ] **Model Switch Warning & Stale Cascading:**
-  - [ ] Implement project settings check: if user changes `projects.embedding_model` when valid embeddings exist, prompt warning requiring explicit confirmation.
-  - [ ] On confirmation, transition all chunks across all documents to `embedding_status = 'stale'` and invalidate FAISS cache.
-- [ ] **Unit Tests for Semantic Splitting & Embeddings:**
-  - [ ] Test that rejected semantic split proposals cleanly remove candidate inline dividers and leave chunk state unaltered.
-  - [ ] Test that "Accept All" batch converts all candidate boundaries within the document/selection to authoritative chunks.
-  - [ ] Test that modifying a parent header flags all child chunks as `stale`.
-  - [ ] Test incremental embedding execution updates only `stale` or `missing` chunks while skipping `current` chunks.
-  - [ ] Execute `go t` to verify all tests pass.
-- [ ] **Testing Point 3: Verify Partitioned Pipelines, Streaming & Vector Indexing**
-  - [ ] Trigger partitioned metadata extraction and verify SSE progress events update the UI in real time.
-  - [ ] Simulate network drop / timeout during a partition and verify checkpoint resume restarts from the first uncommitted batch.
-  - [ ] Trigger semantic auto-splitting on a target chunk and confirm inline candidate breaks render with functional Accept/Reject and Accept All controls.
-  - [ ] Execute embedding refresh and verify SQLite stores float32 binary vectors with synchronized FAISS index serialization.
-  - [ ] Run `go t` to ensure all extraction, splitting, and vector indexing tests pass.
+- [x] **Semantic Auto-Splitting Engine:**
+  - [x] Integrate LangChain semantic splitters evaluated on embedding distance thresholds.
+  - [x] Implement `POST /api/projects/{id}/nodes/semantic-split-preview`:
+    - [x] Calculate candidate split boundaries strictly within selected chunk boundaries without mutating authoritative state.
+    - [x] Return candidate boundary positions, slices, and confidence scores to the UI.
+  - [x] Build In-Canvas Semantic Split Reviewer (replacing modal dialogs):
+    - [x] Inserts proposed split boundaries directly into the Tiptap canvas as a two-enter break featuring a dotted horizontal line across the gap.
+    - [x] Displays centered inline "Accept" and "Reject" action buttons along the dotted divider, doubling as a visual tutorial demonstrating manual double-enter splitting.
+    - [x] Provides an "Accept All" action in the selection toolbar allowing users to batch-commit all proposed split boundaries without inspecting each one individually.
+  - [x] Implement `POST /api/projects/{id}/nodes/semantic-split-accept` supporting both single boundary acceptance and batch "Accept All":
+    - [x] Converts accepted boundaries into authoritative nodes: original slice retains UUID and `order_index`; new slices receive fresh UUIDv4s and incremented `order_index` values.
+    - [x] Adjusts downstream document `order_index` contiguity.
+  - [x] Implement candidate rejection handling that cleans up proposed inline break elements and restores unified chunk flow without mutating backend state.
+- [x] **Contextual Embedding Engine:**
+  - [x] Implement contextual payload compiler:
+    - [x] Resolves ancestor headers via recursive `parent_id` lookups.
+    - [x] Formats payload: `{document_title}\n\n## {header_title}\n### {subheader_title}\n\n{chunk_text}`.
+  - [x] Implement partitioned embedding execution:
+    - [x] Query target chunks `WHERE embedding_status != 'current'`.
+    - [x] Split targets into sequential parts.
+    - [x] Query LM Studio `/v1/embeddings` using the OpenAI SDK.
+    - [x] Store float32 binary vectors into `node_embeddings` and update `nodes.embedding_status = 'current'` per completed partition.
+  - [x] Implement FAISS CPU Index synchronizer:
+    - [x] Maintain synchronized FAISS Flat index (`faiss.IndexFlatIP` or `IndexFlatL2`).
+    - [x] Rebuild serialized index cache when all current embeddings are verified.
+- [x] **Model Switch Warning & Stale Cascading:**
+  - [x] Implement project settings check: if user changes `projects.embedding_model` when valid embeddings exist, prompt warning requiring explicit confirmation.
+  - [x] On confirmation, transition all chunks across all documents to `embedding_status = 'stale'` and invalidate FAISS cache.
+- [x] **Unit Tests for Semantic Splitting & Embeddings:**
+  - [x] Test that rejected semantic split proposals cleanly remove candidate inline dividers and leave chunk state unaltered.
+  - [x] Test that "Accept All" batch converts all candidate boundaries within the document/selection to authoritative chunks.
+  - [x] Test that modifying a parent header flags all child chunks as `stale`.
+  - [x] Test incremental embedding execution updates only `stale` or `missing` chunks while skipping `current` chunks.
+  - [x] Execute `go t` to verify all tests pass.
+- [x] **Testing Point 3: Verify Partitioned Pipelines, Streaming & Vector Indexing**
+  - [x] Trigger partitioned metadata extraction and verify SSE progress events update the UI in real time.
+  - [x] Simulate network drop / timeout during a partition and verify checkpoint resume restarts from the first uncommitted batch.
+  - [x] Trigger semantic auto-splitting on a target chunk and confirm inline candidate breaks render with functional Accept/Reject and Accept All controls.
+  - [x] Execute embedding refresh and verify SQLite stores float32 binary vectors with synchronized FAISS index serialization.
+  - [x] Run `go t` to ensure all extraction, splitting, and vector indexing tests pass.
 
 ## Validation Gate & RAG Bundle Exporter
 

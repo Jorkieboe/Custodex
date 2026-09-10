@@ -27,6 +27,36 @@ let saveTimeout: ReturnType<typeof setTimeout> | null = null
 
 const showEmbeddingStatus = computed(() => store.currentStep === 'embeddings')
 const isSelected = computed(() => store.selectedNodeIds.has(props.node.id))
+const activeProposal = computed(() => store.semanticSplitProposals.get(props.node.id))
+const isAnalyzing = ref(false)
+const noSplitsNotice = ref(false)
+
+const estimatedTokens = computed(() => {
+  const text = props.node.text_content || ''
+  if (!text.trim()) return 0
+  const count = text.trim().split(/\s+/).length
+  return Math.max(1, Math.round(count * 1.25))
+})
+
+async function handleTriggerAutoSplit() {
+  isAnalyzing.value = true
+  noSplitsNotice.value = false
+  try {
+    const previews = await store.requestSemanticSplitPreview([props.node.id])
+    if (!previews || previews.length === 0 || previews[0].proposed_splits.length === 0) {
+      noSplitsNotice.value = true
+      setTimeout(() => {
+        noSplitsNotice.value = false
+      }, 3500)
+    }
+  } finally {
+    isAnalyzing.value = false
+  }
+}
+
+function handleAcceptInlineSplit(splitIndex: number) {
+  store.acceptProposedSplit(props.node.id, [splitIndex])
+}
 
 function parseSegmentsFromText(rawText: string): string[] {
   const parts = rawText.split(/\n\s*\n/)
@@ -66,6 +96,10 @@ const contextMenuItems = computed(() => {
       {
         label: '✂️ Split Chunk Here',
         action: handleContextSplit,
+      },
+      {
+        label: '⚡ Semantic Auto-Split',
+        action: handleTriggerAutoSplit,
       },
       {
         label: '↥ Promote to Header',
@@ -308,6 +342,7 @@ function handleSegmentMouseUp(idx: number) {
           @change="store.toggleNodeSelection(node.id)"
         />
         <span class="order-badge">#{{ node.order_index }}</span>
+        <span class="tokens-badge" title="Estimated token size of this chunk">~{{ estimatedTokens }} tok</span>
 
         <span
           v-if="showEmbeddingStatus"
@@ -320,6 +355,14 @@ function handleSegmentMouseUp(idx: number) {
       </div>
 
       <div class="chunk-tools" v-if="store.currentStep == 'chunks'">
+        <button
+          class="btn-tool btn-autosplit"
+          :disabled="isAnalyzing"
+          @click="handleTriggerAutoSplit"
+          title="Analyze chunk for semantic shifts and suggest split points"
+        >
+          {{ isAnalyzing ? 'Analyzing...' : '⚡ Auto-Split' }}
+        </button>
         <button
           v-if="canMerge"
           class="btn-tool"
@@ -338,8 +381,68 @@ function handleSegmentMouseUp(idx: number) {
       </div>
     </div>
 
+    <!-- Feedback banner when no splits found -->
+    <div v-if="noSplitsNotice" class="no-splits-banner">
+      <span>ℹ️ No semantic breaks detected (chunk is already compact or uniform in topic).</span>
+    </div>
+
+    <!-- Active Proposal Review Banner -->
+    <div v-if="activeProposal" class="semantic-split-proposal-banner">
+      <div class="proposal-info">
+        <span class="proposal-badge">⚡ {{ activeProposal.proposed_splits.length }} Proposed Split(s)</span>
+        <span class="proposal-tutorial">Suggested split — double Enter splits chunks like this</span>
+      </div>
+      <div class="proposal-banner-actions">
+        <button class="btn-proposal-accept" @click="store.acceptProposedSplit(node.id)">
+          ✓ Accept All
+        </button>
+        <button class="btn-proposal-reject" @click="store.rejectProposedSplit(node.id)">
+          ✕ Reject
+        </button>
+      </div>
+    </div>
+
     <div class="chunk-body">
-      <template v-for="(_, idx) in segments" :key="idx">
+   
+
+      <template v-if="activeProposal && activeProposal.proposed_splits.length > 0">
+        <div class="proposed-review-container">
+          <template v-for="(sliceItem, sIdx) in activeProposal.proposed_slices" :key="sIdx">
+            <div class="candidate-slice-card">
+              <div class="slice-card-top">
+                <span class="slice-index-tag">Slice {{ sIdx + 1 }}</span>
+                <span class="slice-token-badge">~{{ typeof sliceItem === 'object' ? sliceItem.token_count : Math.round(sliceItem.length / 4) }} tok</span>
+              </div>
+              <p class="candidate-slice-text">{{ typeof sliceItem === 'object' ? sliceItem.text : sliceItem }}</p>
+            </div>
+
+            <div
+              v-if="sIdx < activeProposal.proposed_splits.length"
+              class="hover-split-divider"
+            >
+              <div class="divider-line"></div>
+              <div class="split-button-wrapper">
+                <button
+                  type="button"
+                  class="split-pill-btn"
+                  @click="handleAcceptInlineSplit(activeProposal.proposed_splits[sIdx].split_index)"
+                >
+                  ✓ Accept This Split
+                </button>
+                <button
+                  type="button"
+                  class="split-pill-btn"
+                  @click="store.rejectProposedSplit(node.id)"
+                >
+                  ✕ Reject
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <template template v-if="!activeProposal || activeProposal.proposed_splits.length == 0" v-for="(_, idx) in segments" :key="idx">
         <div
           :ref="el => setSegmentRef(el, idx)"
           class="chunk-editable-content"
@@ -355,12 +458,15 @@ function handleSegmentMouseUp(idx: number) {
           v-if="idx < segments.length - 1 && store.currentStep == 'chunks'"
           class="hover-split-divider"
           @click="handleSplitBetween(idx)"
-          title="Click to split chunk here"
+          title="Click to split chunk here (or double Enter)"
         >
           <div class="divider-line"></div>
-          <button class="split-pill-btn" type="button">✂ Split Chunk Here</button>
+          <div class="split-button-wrapper">
+            <button class="split-pill-btn" type="button">✂ Split Chunk Here</button>
+          </div>
         </div>
       </template>
+
     </div>
 
     <div
@@ -436,6 +542,16 @@ function handleSegmentMouseUp(idx: number) {
   border-radius: $radius-sm;
 }
 
+.tokens-badge {
+  font-family: $font-family-mono;
+  font-size: 10px;
+  font-weight: 600;
+  color: $color-primary;
+  background-color: rgba(56, 189, 248, 0.1);
+  padding: 1px 5px;
+  border-radius: $radius-sm;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -486,6 +602,184 @@ function handleSegmentMouseUp(idx: number) {
     color: $color-text-primary;
     background-color: $color-surface-hover;
   }
+
+  &.btn-autosplit {
+    color: $color-primary;
+    background-color: rgba(56, 189, 248, 0.1);
+    font-weight: 600;
+
+    &:hover:not(:disabled) {
+      background-color: $color-primary;
+      color: #000;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.no-splits-banner {
+  background-color: rgba(234, 179, 8, 0.1);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.25);
+  color: #eab308;
+  font-size: 11px;
+  padding: 6px 14px;
+}
+
+.semantic-split-proposal-banner {
+  background-color: rgba(56, 189, 248, 0.12);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.proposal-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proposal-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background-color: $color-primary;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+}
+
+.proposal-tutorial {
+  font-size: 11px;
+  color: $color-text-secondary;
+}
+
+.proposal-banner-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-proposal-accept {
+  background-color: #22c55e;
+  color: #000;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: $radius-sm;
+  cursor: pointer;
+}
+
+.btn-proposal-reject {
+  background-color: transparent;
+  color: $color-text-secondary;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: $radius-sm;
+  cursor: pointer;
+
+  &:hover {
+    color: $color-text-primary;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.proposed-review-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.proposed-review-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: $color-primary;
+  letter-spacing: 0.04em;
+}
+
+.candidate-slice-card {
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px dashed rgba(56, 189, 248, 0.3);
+  border-radius: $radius-sm;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slice-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slice-index-tag {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: $font-family-mono;
+  color: $color-primary;
+}
+
+.slice-token-badge {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: $font-family-mono;
+  color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.1);
+  padding: 1px 5px;
+  border-radius: $radius-sm;
+}
+
+.candidate-slice-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: $color-text-primary;
+}
+
+.split-button-wrapper{
+  position: absolute;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+
+.confidence-tag {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: $font-family-mono;
+  color: $color-primary;
+  padding-right: 4px;
+}
+
+.btn-candidate-accept {
+  background-color: #22c55e;
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #16a34a;
+  }
+}
+
+.btn-candidate-reject {
+  background-color: transparent;
+  color: $color-text-muted;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  cursor: pointer;
+
+  &:hover {
+    color: #ef4444;
+  }
 }
 
 .chunk-body {
@@ -529,7 +823,6 @@ function handleSegmentMouseUp(idx: number) {
   }
 
   .split-pill-btn {
-    position: absolute;
     background-color: $color-surface;
     border: 1px solid rgba(56, 189, 248, 0.4);
     color: $color-primary;
@@ -540,18 +833,20 @@ function handleSegmentMouseUp(idx: number) {
     opacity: 0.5;
     transition: all 0.15s ease;
     cursor: pointer;
-  }
+    margin-right: 1rem;
 
-  &:hover {
-    .divider-line {
-      border-top: 1px dashed $color-primary;
-    }
-    .split-pill-btn {
+    &:hover{
       opacity: 1;
       transform: scale(1.05);
       background-color: $color-primary;
       color: #000;
       border-color: $color-primary;
+    }
+
+    &:has(.split-pill-btn:hover) {
+      .divider-line {
+        border-top-color: $color-primary;
+      }
     }
   }
 }

@@ -11,6 +11,7 @@ from backend.routers.nodes import router as nodes_router
 from backend.routers.projects import router as projects_router
 from backend.routers.schema import router as schema_router
 from backend.routers.metadata import router as metadata_router
+from backend.routers.embeddings import router as embeddings_router
 
 app = FastAPI(
     title="Custodex API",
@@ -32,6 +33,7 @@ app.include_router(documents_router)
 app.include_router(nodes_router)
 app.include_router(schema_router)
 app.include_router(metadata_router)
+app.include_router(embeddings_router)
 
 class StatusResponse(BaseModel):
     status: str
