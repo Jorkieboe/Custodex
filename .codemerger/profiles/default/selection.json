@@ -97,5 +97,38 @@
   },
   {
     "path": "src/services/schema.ts"
+  },
+  {
+    "path": "frontend/components/metadata/BatchProgressModal.vue"
+  },
+  {
+    "path": "backend/services/metadata_extractor.py"
+  },
+  {
+    "path": "backend/services/job_manager.py"
+  },
+  {
+    "path": "backend/routers/metadata.py"
+  },
+  {
+    "path": "frontend/services/metadata.ts"
+  },
+  {
+    "path": "frontend/components/metadata/ChunkMetadataInspector.vue"
+  },
+  {
+    "path": "tests/backend/test_metadata_extraction.py"
+  },
+  {
+    "path": "tests/frontend/metadata.test.ts"
+  },
+  {
+    "path": "backend/main.py"
+  },
+  {
+    "path": "frontend/services/api.ts"
+  },
+  {
+    "path": "frontend/stores/workspace.ts"
   }
 ]

@@ -11,6 +11,9 @@ export interface AppConfig {
   default_llm_model: string
   default_embedding_model: string
   lm_studio_endpoint: string
+  llm_endpoint?: string
+  embedding_endpoint?: string
+  openai_api_key?: string
   recent_projects: string[]
 }
 
@@ -18,6 +21,9 @@ export interface ApiStatus {
   status: string
   lm_studio_connected: boolean
   lm_studio_endpoint: string
+  llm_endpoint?: string
+  embedding_endpoint?: string
+  has_openai_api_key?: boolean
   default_llm_model: string
   default_embedding_model: string
 }

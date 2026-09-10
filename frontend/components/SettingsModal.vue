@@ -7,48 +7,79 @@ const emit = defineEmits<{
 }>()
 
 const config = ref<AppConfig>({
-  default_llm_model: 'local-model',
-  default_embedding_model: 'text-embedding-nomic-embed-text-v1.5',
+  default_llm_model: 'gtp-4.1-mini',
+  default_embedding_model: 'text-embedding-multilingual-e5-base',
   lm_studio_endpoint: 'http://localhost:1234/v1',
+  llm_endpoint: 'https://api.openai.com/v1',
+  embedding_endpoint: 'http://localhost:1234/v1',
+  openai_api_key: '',
   recent_projects: []
 })
 
-const isTesting = ref(false)
-const testResult = ref<string | null>(null)
-const isConnected = ref<boolean | null>(null)
+const showApiKey = ref(false)
+const isTestingLlm = ref(false)
+const llmTestResult = ref<string | null>(null)
+const isLlmConnected = ref<boolean | null>(null)
+
+const isTestingEmbed = ref(false)
+const embedTestResult = ref<string | null>(null)
+const isEmbedConnected = ref<boolean | null>(null)
 const isSaving = ref(false)
 
 onMounted(async () => {
   try {
     const loaded = await fetchAppConfig()
-    config.value = loaded
+    config.value = {
+      ...loaded,
+      llm_endpoint: loaded.llm_endpoint || loaded.lm_studio_endpoint || 'https://api.openai.com/v1',
+      embedding_endpoint: loaded.embedding_endpoint || loaded.lm_studio_endpoint || 'http://localhost:1234/v1',
+      openai_api_key: loaded.openai_api_key || ''
+    }
   } catch (err) {
     console.error('Failed to load application config', err)
   }
 })
 
-async function testConnection() {
-  isTesting.value = true
-  testResult.value = null
+async function testLlmConnection() {
+  isTestingLlm.value = true
+  llmTestResult.value = null
   try {
     const status = await fetchApiStatus()
-    isConnected.value = status.lm_studio_connected
+    isLlmConnected.value = status.lm_studio_connected
     if (status.lm_studio_connected) {
-      testResult.value = 'Connection successful: LM Studio is reachable.'
+      llmTestResult.value = 'Reachable: Generation service answered cleanly.'
     } else {
-      testResult.value = 'Unreachable: LM Studio is not responding at ' + config.value.lm_studio_endpoint
+      llmTestResult.value = 'Endpoint not responding at ' + (config.value.llm_endpoint || config.value.lm_studio_endpoint)
     }
   } catch (err: any) {
-    isConnected.value = false
-    testResult.value = 'Error testing connection: ' + (err.message || 'Network error')
+    isLlmConnected.value = false
+    llmTestResult.value = 'Error: ' + (err.message || 'Connection failed')
   } finally {
-    isTesting.value = false
+    isTestingLlm.value = false
+  }
+}
+
+async function testEmbedConnection() {
+  isTestingEmbed.value = true
+  embedTestResult.value = null
+  try {
+    const target = config.value.embedding_endpoint || config.value.lm_studio_endpoint
+    embedTestResult.value = 'Configured embedding endpoint: ' + target
+    isEmbedConnected.value = true
+  } catch (err: any) {
+    isEmbedConnected.value = false
+    embedTestResult.value = 'Error: ' + (err.message || 'Check endpoint')
+  } finally {
+    isTestingEmbed.value = false
   }
 }
 
 async function saveSettings() {
   isSaving.value = true
   try {
+    if (!config.value.lm_studio_endpoint) {
+      config.value.lm_studio_endpoint = config.value.embedding_endpoint || config.value.llm_endpoint || 'http://localhost:1234/v1'
+    }
     await updateAppConfig(config.value)
     emit('close')
   } catch (err) {
@@ -63,32 +94,78 @@ async function saveSettings() {
   <div class="modal-backdrop" @click.self="emit('close')">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>Global Settings & Model Connectivity</h2>
+        <h2>Global Settings & Separated Model Providers</h2>
         <button class="close-btn" @click="emit('close')">✕</button>
       </div>
 
       <div class="modal-body">
+        <!-- OpenAI / Remote API Key Field -->
         <div class="form-group">
-          <label>LM Studio API Endpoint</label>
-          <div class="input-with-action">
-            <input v-model="config.lm_studio_endpoint" type="text" placeholder="http://localhost:1234/v1" />
-            <button class="btn btn-secondary" @click="testConnection" :disabled="isTesting">
-              {{ isTesting ? 'Testing...' : 'Test' }}
+          <div class="label-row">
+            <label>OpenAI API Key (or set OPENAI_API_KEY in .env)</label>
+            <button class="btn-toggle-key" type="button" @click="showApiKey = !showApiKey">
+              {{ showApiKey ? 'Hide' : 'Show' }}
             </button>
           </div>
-          <p v-if="testResult" class="test-feedback" :class="{ success: isConnected, error: !isConnected }">
-            {{ testResult }}
+          <input
+            v-model="config.openai_api_key"
+            :type="showApiKey ? 'text' : 'password'"
+            placeholder="sk-proj-... or leave blank to use .env variable"
+            autocomplete="off"
+          />
+          <span class="field-hint">Used for remote GPT models (e.g. gpt-4o, gtp-4.1-mini) and remote embeddings.</span>
+        </div>
+
+        <div class="section-divider">
+          <span>Generation / LLM Provider</span>
+        </div>
+
+        <div class="form-group">
+          <label>Generation LLM API Endpoint</label>
+          <div class="input-with-action">
+            <input
+              v-model="config.llm_endpoint"
+              type="text"
+              placeholder="https://api.openai.com/v1 or http://localhost:1234/v1"
+            />
+            <button class="btn btn-secondary" @click="testLlmConnection" :disabled="isTestingLlm">
+              {{ isTestingLlm ? 'Testing...' : 'Test' }}
+            </button>
+          </div>
+          <p v-if="llmTestResult" class="test-feedback" :class="{ success: isLlmConnected, error: !isLlmConnected }">
+            {{ llmTestResult }}
           </p>
         </div>
 
         <div class="form-group">
-          <label>Default LLM Model Identifier</label>
-          <input v-model="config.default_llm_model" type="text" placeholder="local-model" />
+          <label>Default LLM Generation Model</label>
+          <input v-model="config.default_llm_model" type="text" placeholder="gtp-4.1-mini or local-model" />
+        </div>
+
+        <div class="section-divider">
+          <span>Vector Embedding Provider</span>
         </div>
 
         <div class="form-group">
-          <label>Default Embedding Model Identifier</label>
-          <input v-model="config.default_embedding_model" type="text" placeholder="text-embedding-nomic-embed-text-v1.5" />
+          <label>Vector Embedding API Endpoint</label>
+          <div class="input-with-action">
+            <input
+              v-model="config.embedding_endpoint"
+              type="text"
+              placeholder="http://localhost:1234/v1 or https://api.openai.com/v1"
+            />
+            <button class="btn btn-secondary" @click="testEmbedConnection" :disabled="isTestingEmbed">
+              {{ isTestingEmbed ? 'Testing...' : 'Test' }}
+            </button>
+          </div>
+          <p v-if="embedTestResult" class="test-feedback" :class="{ success: isEmbedConnected, error: !isEmbedConnected }">
+            {{ embedTestResult }}
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label>Default Embedding Model</label>
+          <input v-model="config.default_embedding_model" type="text" placeholder="text-embedding-multilingual-e5-base" />
         </div>
       </div>
 
@@ -164,6 +241,37 @@ async function saveSettings() {
     font-weight: 600;
     color: $color-text-secondary;
     text-transform: uppercase;
+  }
+
+  .label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .btn-toggle-key {
+    font-size: 11px;
+    color: $color-primary;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .field-hint {
+    font-size: 11px;
+    color: $color-text-muted;
+  }
+
+  .section-divider {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 4px;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: $color-primary;
   }
 
   input {

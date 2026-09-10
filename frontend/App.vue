@@ -6,6 +6,7 @@ import StepNavigator from './components/StepNavigator.vue'
 import IngestionView from './components/IngestionView.vue'
 import ChunkCanvas from './components/canvas/ChunkCanvas.vue'
 import SchemaDesigner from './components/schema/SchemaDesigner.vue'
+import MetadataView from './components/metadata/MetadataView.vue'
 import SettingsModal from './components/SettingsModal.vue'
 
 const store = useWorkspaceStore()
@@ -47,16 +48,8 @@ function handleBackToHub() {
         <!-- Step 3: Schema Designer -->
         <SchemaDesigner v-else-if="store.currentStep === 'schema'" />
 
-        <!-- Step 4: Metadata Extraction Placeholder -->
-        <div v-else-if="store.currentStep === 'metadata'" class="step-placeholder">
-          <div class="placeholder-card">
-            <h2>Partitioned Metadata Extraction</h2>
-            <p>Batch LLM extraction engine with real-time SSE progress streaming.</p>
-            <button class="btn btn-primary" @click="store.setStep('chunks')">
-              Return to Chunk Canvas
-            </button>
-          </div>
-        </div>
+        <!-- Step 4: Metadata Extraction Workbench -->
+        <MetadataView v-else-if="store.currentStep === 'metadata'" />
 
         <!-- Step 5: Incremental Embedding Refresh -->
         <!-- Note: Embedding status indicators become visible on the canvas during this step -->

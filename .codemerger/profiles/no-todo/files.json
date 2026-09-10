@@ -1,5 +1,11 @@
 {
   "unknown_files": [
+    "backend/routers/metadata.py",
+    "backend/services/job_manager.py",
+    "backend/services/metadata_extractor.py",
+    "frontend/components/metadata/BatchProgressModal.vue",
+    "frontend/components/metadata/ChunkMetadataInspector.vue",
+    "frontend/services/metadata.ts",
     "src/components/schema/FieldCard.vue",
     "src/components/schema/SchemaDesigner.vue",
     "src/routers/schema.py",
@@ -7,7 +13,9 @@
     "src/services/nodes.ts",
     "src/services/projects.ts",
     "src/services/schema.ts",
+    "tests/backend/test_metadata_extraction.py",
     "tests/backend/test_schema.py",
+    "tests/frontend/metadata.test.ts",
     "tests/frontend/schema.test.ts"
   ]
 }

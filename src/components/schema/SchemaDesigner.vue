@@ -132,6 +132,13 @@ const compiledJsonSchema = computed(() => {
           >
             {{ showJsonPreview ? 'Hide JSON Schema' : 'View JSON Schema' }}
           </button>
+          <button
+            class="btn btn-primary"
+            :disabled="store.schemaFields.length === 0"
+            @click="store.openBatchModal"
+          >
+            ⚡ Extract Metadata
+          </button>
         </div>
       </div>
 

@@ -1,3 +1,4 @@
+import re
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -12,8 +13,12 @@ from backend.services.project_manager import get_project_connection
 
 router = APIRouter(prefix="/api/projects/{project_id}/schema", tags=["schema"])
 
+def slugify(text: str) -> str:
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", text.strip().lower())
+    return slug.strip("_")
+
 class CreateSchemaFieldPayload(BaseModel):
-    field_slug: str
+    field_slug: Optional[str] = None
     field_label: str
     field_type: FieldType = "string"
     description: str = ""
@@ -51,7 +56,7 @@ async def get_project_schema(project_id: str):
         for r in rows
     ]
 
-@router.get("/json")
+@router.get("/json-schema")
 async def get_compiled_json_schema(project_id: str):
     fields = await get_project_schema(project_id)
     return generate_json_schema_from_fields(fields)
@@ -69,6 +74,10 @@ async def create_schema_field(project_id: str, payload: CreateSchemaFieldPayload
         )
         order_idx = cursor.fetchone()["max_order"] + 1
 
+    slug = slugify(payload.field_slug) if payload.field_slug and payload.field_slug.strip() else slugify(payload.field_label)
+    if not slug:
+        slug = f"field_{order_idx}"
+
     field_id = generate_uuid()
     with conn:
         conn.execute(
@@ -79,7 +88,7 @@ async def create_schema_field(project_id: str, payload: CreateSchemaFieldPayload
             (
                 field_id,
                 project_id,
-                payload.field_slug,
+                slug,
                 payload.field_label,
                 payload.field_type,
                 payload.description,
@@ -91,7 +100,7 @@ async def create_schema_field(project_id: str, payload: CreateSchemaFieldPayload
     return SchemaFieldModel(
         id=field_id,
         project_id=project_id,
-        field_slug=payload.field_slug,
+        field_slug=slug,
         field_label=payload.field_label,
         field_type=payload.field_type,
         description=payload.description,

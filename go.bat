@@ -71,20 +71,24 @@ goto :Usage
 :RunTests
     call :ActivateVenv
     if !errorlevel! neq 0 goto :eof
+
     echo [1/2] Running backend unit test suite with pytest...
     python -m pytest
     if !errorlevel! neq 0 (
         echo Pytest suite failed.
         exit /b 1
     )
-    if exist package.json (
-        echo [2/2] Running frontend unit test suite with vitest...
-        call npm run test:unit
-        if !errorlevel! neq 0 (
-            echo Vitest suite failed.
-            exit /b 1
-        )
+
+    if not exist package.json goto :TestsDone
+
+    echo [2/2] Running frontend unit test suite with vitest...
+    call npm run test:unit
+    if !errorlevel! neq 0 (
+        echo Vitest suite failed.
+        exit /b 1
     )
+
+:TestsDone
     echo All test suites passed cleanly.
     goto :eof
 

@@ -10,6 +10,7 @@ from backend.routers.documents import router as documents_router
 from backend.routers.nodes import router as nodes_router
 from backend.routers.projects import router as projects_router
 from backend.routers.schema import router as schema_router
+from backend.routers.metadata import router as metadata_router
 
 app = FastAPI(
     title="Custodex API",
@@ -30,11 +31,15 @@ app.include_router(projects_router)
 app.include_router(documents_router)
 app.include_router(nodes_router)
 app.include_router(schema_router)
+app.include_router(metadata_router)
 
 class StatusResponse(BaseModel):
     status: str
     lm_studio_connected: bool
     lm_studio_endpoint: str
+    llm_endpoint: str = ""
+    embedding_endpoint: str = ""
+    has_openai_api_key: bool = False
     default_llm_model: str
     default_embedding_model: str
 
@@ -43,10 +48,14 @@ async def get_status() -> StatusResponse:
     config = load_config()
     lm_connected = False
 
+    probe_url = config.llm_endpoint or config.lm_studio_endpoint
     try:
-        models_url = f"{config.lm_studio_endpoint.rstrip('/')}/models"
+        models_url = f"{probe_url.rstrip('/')}/models"
+        headers = {}
+        if config.openai_api_key:
+            headers["Authorization"] = f"Bearer {config.openai_api_key}"
         async with httpx.AsyncClient(timeout=1.5) as client:
-            resp = await client.get(models_url)
+            resp = await client.get(models_url, headers=headers)
             if resp.status_code == 200:
                 lm_connected = True
     except Exception:
@@ -56,6 +65,9 @@ async def get_status() -> StatusResponse:
         status="online",
         lm_studio_connected=lm_connected,
         lm_studio_endpoint=config.lm_studio_endpoint,
+        llm_endpoint=config.llm_endpoint or config.lm_studio_endpoint,
+        embedding_endpoint=config.embedding_endpoint or config.lm_studio_endpoint,
+        has_openai_api_key=bool(config.openai_api_key),
         default_llm_model=config.default_llm_model,
         default_embedding_model=config.default_embedding_model,
     )

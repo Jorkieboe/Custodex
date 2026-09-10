@@ -29,6 +29,7 @@
     "frontend/components/canvas/ChunkCanvas.vue",
     "frontend/components/canvas/ChunkNodeView.vue",
     "frontend/components/canvas/HeaderNodeView.vue",
+    "frontend/components/metadata/MetadataView.vue",
     "frontend/components/schema/SchemaDesigner.vue",
     "frontend/main.ts",
     "frontend/services/api.ts",
@@ -39,6 +40,7 @@
     "frontend/stores/workspace.ts",
     "frontend/styles/main.scss",
     "frontend/styles/variables.scss",
+    "tests/backend/test_model_config.py",
     "tests/backend/test_schema_router.py"
   ]
 }

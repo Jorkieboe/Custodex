@@ -1,8 +1,9 @@
 {
-  "default_llm_model": "local-model",
-  "default_embedding_model": "text-embedding-nomic-embed-text-v1.5",
-  "lm_studio_endpoint": "http://localhost:1234/v1",
+  "default_llm_model": "gtp-4.1-mini",
+  "default_embedding_model": "text-embedding-multilingual-e5-base",
+  "lm_studio_endpoint": "https://api.openai.com/v1/",
   "recent_projects": [
+    "437bbe9f-51e1-45bb-9a5b-72e560bd4d2a",
     "6eaa48cb-4ac9-4cba-a7be-05eeef5a7b03"
   ]
 }

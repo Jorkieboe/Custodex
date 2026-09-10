@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter
 from backend.config import AppConfig, load_config, save_config
 
@@ -9,5 +10,7 @@ async def get_config() -> AppConfig:
 
 @router.put("", response_model=AppConfig)
 async def update_config(payload: AppConfig) -> AppConfig:
+    if payload.openai_api_key:
+        os.environ["OPENAI_API_KEY"] = payload.openai_api_key
     save_config(payload)
     return payload

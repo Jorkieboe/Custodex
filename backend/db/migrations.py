@@ -51,7 +51,8 @@ CREATE TABLE IF NOT EXISTS node_metadata (
     node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
     field_id TEXT NOT NULL REFERENCES schema_fields(id) ON DELETE CASCADE,
     field_value TEXT NOT NULL,
-    user_edited INTEGER NOT NULL DEFAULT 0
+    user_edited INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT uq_node_field UNIQUE (node_id, field_id)
 );
 
 CREATE TABLE IF NOT EXISTS batch_checkpoints (
@@ -66,7 +67,7 @@ CREATE TABLE IF NOT EXISTS batch_checkpoints (
 
 CREATE INDEX IF NOT EXISTS idx_nodes_doc_order ON nodes(document_id, order_index);
 CREATE INDEX IF NOT EXISTS idx_nodes_parent ON nodes(parent_id);
-CREATE INDEX IF NOT EXISTS idx_node_metadata_node_field ON node_metadata(node_id, field_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_node_metadata_node_field ON node_metadata(node_id, field_id);
 CREATE INDEX IF NOT EXISTS idx_schema_fields_project ON schema_fields(project_id);
 """
 

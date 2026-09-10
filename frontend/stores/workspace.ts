@@ -20,7 +20,12 @@ import {
   promoteProjectNode,
   demoteProjectNode,
   detachSelectionToHeader,
-  updateProjectNode
+  updateProjectNode,
+  type ChunkMetadataItem,
+  type MetadataJobStatus,
+  fetchNodeMetadata,
+  updateNodeMetadata,
+  startMetadataJob
 } from '../services/api'
 
 export type WorkspaceStep = 'ingestion' | 'chunks' | 'schema' | 'metadata' | 'embeddings' | 'export'
@@ -30,6 +35,22 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const documents = ref<DocumentSummary[]>([])
   const nodes = ref<NodeItem[]>([])
   const schemaFields = ref<SchemaField[]>([])
+  const activeNodeId = ref<string | null>(null)
+  const activeNodeMetadata = ref<ChunkMetadataItem[]>([])
+  const isInspectorOpen = ref(false)
+  const isBatchModalOpen = ref(false)
+  const nodesWithMetadata = ref<Set<string>>(new Set())
+  const isGeneratingSingle = ref<string | null>(null)
+  let sseEventSource: EventSource | null = null
+
+  const metadataJobStatus = ref<MetadataJobStatus>({
+    status: 'idle',
+    completed_partitions: 0,
+    total_partitions: 0,
+    completed_chunks: 0,
+    total_chunks: 0,
+    last_error: null
+  })
   const selectedNodeIds = ref<Set<string>>(new Set())
   const currentStep = ref<WorkspaceStep>('chunks')
   const isLoading = ref<boolean>(false)
@@ -259,7 +280,223 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     addSchemaField,
     modifySchemaField,
     removeSchemaField,
-    reorderSchemaFields
+    reorderSchemaFields,
+    activeNodeId,
+    activeNodeMetadata,
+    isInspectorOpen,
+    isBatchModalOpen,
+    metadataJobStatus,
+    selectNode,
+    openInspector,
+    closeInspector,
+    openBatchModal,
+    closeBatchModal,
+    loadActiveNodeMetadata,
+    saveNodeMetadataField,
+    triggerMetadataExtraction,
+    nodesWithMetadata,
+    isGeneratingSingle,
+    generateMetadataForNode,
+    startAutogeneration,
+    cancelAutogeneration,
+    loadProjectMetadataOverview
+  }
+
+  async function loadProjectMetadataOverview() {
+    if (!currentProject.value) return
+    try {
+      const resp = await fetchProjectNodes(currentProject.value.id)
+      for (const n of resp) {
+        if (n.node_type === 'paragraph') {
+          try {
+            const meta = await fetchNodeMetadata(currentProject.value.id, n.id)
+            if (meta && meta.length > 0) {
+              nodesWithMetadata.value.add(n.id)
+            }
+          } catch {
+            // Ignore individual chunk metadata lookup errors
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load project metadata overview:', err)
+    }
+  }
+
+  async function generateMetadataForNode(nodeId: string) {
+    if (!currentProject.value) return
+    isGeneratingSingle.value = nodeId
+    try {
+      await startMetadataJob(currentProject.value.id, {
+        node_id: nodeId,
+        force_overwrite: true
+      })
+      await loadActiveNodeMetadata(nodeId)
+      nodesWithMetadata.value.add(nodeId)
+    } catch (err: any) {
+      console.error('Single chunk metadata generation failed:', err)
+      errorMessage.value = err.message || 'Metadata generation failed for selected chunk'
+      throw err
+    } finally {
+      isGeneratingSingle.value = null
+    }
+  }
+
+  function startAutogeneration(options: { force_overwrite?: boolean; resume?: boolean } = {}) {
+    if (!currentProject.value) return
+
+    if (sseEventSource) {
+      sseEventSource.close()
+      sseEventSource = null
+    }
+
+    const totalParagraphs = nodes.value.filter((n: NodeItem) => n.node_type === 'paragraph').length
+    metadataJobStatus.value = {
+      status: 'running',
+      completed_partitions: 0,
+      total_partitions: 1,
+      completed_chunks: 0,
+      total_chunks: totalParagraphs,
+      last_error: null
+    }
+
+    const sseUrl = `/api/projects/${currentProject.value.id}/metadata/stream`
+    sseEventSource = new EventSource(sseUrl)
+
+    const handleMessage = (data: any) => {
+      if (data.status) metadataJobStatus.value.status = data.status
+      if (data.completed_chunks !== undefined) metadataJobStatus.value.completed_chunks = data.completed_chunks
+      if (data.total_chunks !== undefined) metadataJobStatus.value.total_chunks = data.total_chunks
+      if (data.completed_partitions !== undefined) metadataJobStatus.value.completed_partitions = data.completed_partitions
+      if (data.total_partitions !== undefined) metadataJobStatus.value.total_partitions = data.total_partitions
+      if (data.last_error) metadataJobStatus.value.last_error = data.last_error
+
+      if (data.current_chunk_id) {
+        nodesWithMetadata.value.add(data.current_chunk_id)
+        if (activeNodeId.value === data.current_chunk_id) {
+          loadActiveNodeMetadata(data.current_chunk_id)
+        }
+      }
+
+      if (data.status === 'completed' || data.status === 'failed') {
+        if (sseEventSource) {
+          sseEventSource.close()
+          sseEventSource = null
+        }
+        if (activeNodeId.value) {
+          loadActiveNodeMetadata(activeNodeId.value)
+        }
+      }
+    }
+
+    sseEventSource.onmessage = (event: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(event.data)
+        handleMessage(parsed)
+      } catch (err) {
+        console.error('Error parsing SSE event data:', err)
+      }
+    }
+
+    sseEventSource.addEventListener('progress', (event: MessageEvent) => {
+      try {
+        const parsed = JSON.parse(event.data)
+        handleMessage(parsed)
+      } catch (err) {
+        console.error('Error parsing SSE progress event:', err)
+      }
+    })
+
+    sseEventSource.addEventListener('complete', (event: MessageEvent) => {
+      metadataJobStatus.value.status = 'completed'
+      if (sseEventSource) {
+        sseEventSource.close()
+        sseEventSource = null
+      }
+      if (activeNodeId.value) {
+        loadActiveNodeMetadata(activeNodeId.value)
+      }
+    })
+
+    sseEventSource.onerror = () => {
+      if (metadataJobStatus.value.status === 'running') {
+        metadataJobStatus.value.status = 'failed'
+        metadataJobStatus.value.last_error = 'SSE stream disconnected or failed'
+      }
+      if (sseEventSource) {
+        sseEventSource.close()
+        sseEventSource = null
+      }
+    }
+
+    startMetadataJob(currentProject.value.id, options).catch((err: any) => {
+      metadataJobStatus.value.status = 'failed'
+      metadataJobStatus.value.last_error = err.message || 'Failed to start metadata job'
+      if (sseEventSource) {
+        sseEventSource.close()
+        sseEventSource = null
+      }
+    })
+  }
+
+  function cancelAutogeneration() {
+    if (sseEventSource) {
+      sseEventSource.close()
+      sseEventSource = null
+    }
+    metadataJobStatus.value.status = 'idle'
+  }
+
+  async function selectNode(id: string | null) {
+    activeNodeId.value = id
+    if (id && currentProject.value) {
+      await loadActiveNodeMetadata(id)
+    } else {
+      activeNodeMetadata.value = []
+    }
+  }
+
+  async function loadActiveNodeMetadata(nodeId: string) {
+    if (!currentProject.value) return
+    try {
+      activeNodeMetadata.value = await fetchNodeMetadata(currentProject.value.id, nodeId)
+    } catch (err) {
+      console.error('Failed to load node metadata:', err)
+    }
+  }
+
+  async function saveNodeMetadataField(nodeId: string, fieldId: string, value: any) {
+    if (!currentProject.value) return
+    const payload: Record<string, any> = { [fieldId]: value }
+    await updateNodeMetadata(currentProject.value.id, nodeId, payload)
+    const item = activeNodeMetadata.value.find((m: ChunkMetadataItem) => m.field_id === fieldId)
+    if (item) {
+      item.field_value = value
+      item.user_edited = true
+    }
+  }
+
+  function openInspector() {
+    isInspectorOpen.value = true
+  }
+
+  function closeInspector() {
+    isInspectorOpen.value = false
+  }
+
+  function openBatchModal() {
+    isBatchModalOpen.value = true
+  }
+
+  function closeBatchModal() {
+    isBatchModalOpen.value = false
+  }
+
+  async function triggerMetadataExtraction(options: { force_overwrite?: boolean; resume?: boolean } = {}) {
+    if (!currentProject.value) return
+    await startMetadataJob(currentProject.value.id, options)
+    metadataJobStatus.value.status = 'running'
+    openBatchModal()
   }
 
   async function reloadSchema() {

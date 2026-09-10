@@ -187,5 +187,20 @@
   },
   {
     "path": "frontend/components/schema/SchemaDesigner.vue"
+  },
+  {
+    "path": "frontend/components/metadata/MetadataView.vue"
+  },
+  {
+    "path": "tests/frontend/metadata.test.ts"
+  },
+  {
+    "path": "tests/backend/test_model_config.py"
+  },
+  {
+    "path": "backend/routers/metadata.py"
+  },
+  {
+    "path": "frontend/services/metadata.ts"
   }
 ]

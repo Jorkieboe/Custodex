@@ -60,7 +60,7 @@ def test_schema_crud_and_json_schema_export(test_project):
     assert patch_resp.json()["field_label"] == "Chunk Summary"
 
     # Export compiled JSON Schema
-    json_resp = client.get(f"/api/projects/{project_id}/schema/json")
+    json_resp = client.get(f"/api/projects/{project_id}/schema/json-schema")
     assert json_resp.status_code == 200
     schema_json = json_resp.json()
     assert "summary" in schema_json["properties"]

@@ -1,10 +1,10 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from src.db.connection import get_connection
-from src.db.migrations import init_db
-from src.main import app
-from src.services.project_manager import register_custom_connection
+from backend.db.connection import get_connection
+from backend.db.migrations import init_db
+from backend.main import app
+from backend.services.project_manager import register_custom_connection
 
 client = TestClient(app)
 

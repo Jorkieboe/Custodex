@@ -154,30 +154,30 @@ graph TD
   - [x] Implement editable Field Card component displaying field label, auto-generated slug, type icon, required toggle, and prompt description textarea.
   - [x] Ensure every field is bound to an immutable `field_id` (UUIDv4) so renames or reorders do not break existing chunk bindings.
   - [x] Implement schema persistence endpoints (`GET/POST/PUT /api/projects/{id}/schema`).
-- [ ] **Partitioned Batch Extraction Engine:**
-  - [ ] Implement metadata batch partitioner dividing eligible chunks into configurable batches of N chunks (e.g., N=10) editing in config.
-  - [ ] Implement LLM prompt builder transforming active `schema_fields` into a strict JSON Schema and assembling chunk context (`Document Title > Headers > Chunk Body`).
-  - [ ] Implement OpenAI client wrapper targeting LM Studio `/v1/chat/completions` with `response_format: { type: "json_object" }`.
-  - [ ] Implement transactional partition committer:
-    - [ ] Commit each batch's extracted metadata into `node_metadata` within an atomic SQLite transaction upon completion.
-    - [ ] Update `batch_checkpoints` recording `completed_partition` and `status`.
-    - [ ] Protect fields with `user_edited: true` unless `force_overwrite` is explicitly enabled.
-  - [ ] Implement error trapper catching timeouts, JSON decoding failures, and local OOM crashes, rolling back only the active batch and preserving previously committed batches.
-- [ ] **Real-Time Progress Streaming (SSE):**
-  - [ ] Implement job trigger endpoint `POST /api/projects/{id}/jobs/metadata/start` dispatching background extraction task.
-  - [ ] Implement Server-Sent Events (SSE) endpoint `GET /api/projects/{id}/jobs/metadata/stream` pushing real-time partition completion events, chunk counters, and diagnostic error alerts.
-  - [ ] Implement frontend Batch Progress Modal:
-    - [ ] Displays live partition progress bar (e.g., "Processing Part 2 of 5 — Chunk 45/100").
-    - [ ] Shows diagnostic failure cards on crash.
-    - [ ] Includes "Resume Extraction" button that restarts execution starting from the first incomplete partition.
-- [ ] **Chunk Metadata Inspector & Manual Override Panel:**
-  - [ ] Build slide-out side panel displaying metadata fields for the active chunk.
-  - [ ] Allow inline editing of field values; automatically tag edited fields with `user_edited = true`.
-- [ ] **Unit Tests for Metadata Extraction:**
-  - [ ] Test dynamic Pydantic schema generation from arbitrary field configurations.
-  - [ ] Test that batch checkpoints allow resuming from failed partition without re-running completed partitions.
-  - [ ] Test that LLM output does not overwrite fields with `user_edited: true` when `force_overwrite = false`.
-  - [ ] Execute `go t` to verify test suite passes.
+- [x] **Partitioned Batch Extraction Engine:**
+  - [x] Implement metadata batch partitioner dividing eligible chunks into configurable batches of N chunks (e.g., N=10) editing in config.
+  - [x] Implement LLM prompt builder transforming active `schema_fields` into a strict JSON Schema and assembling chunk context (`Document Title > Headers > Chunk Body`).
+  - [x] Implement OpenAI client wrapper targeting LM Studio `/v1/chat/completions` with `response_format: { type: "json_object" }`.
+  - [x] Implement transactional partition committer:
+    - [x] Commit each batch's extracted metadata into `node_metadata` within an atomic SQLite transaction upon completion.
+    - [x] Update `batch_checkpoints` recording `completed_partition` and `status`.
+    - [x] Protect fields with `user_edited: true` unless `force_overwrite` is explicitly enabled.
+  - [x] Implement error trapper catching timeouts, JSON decoding failures, and local OOM crashes, rolling back only the active batch and preserving previously committed batches.
+- [x] **Real-Time Progress Streaming (SSE):**
+  - [x] Implement job trigger endpoint `POST /api/projects/{id}/jobs/metadata/start` dispatching background extraction task.
+  - [x] Implement Server-Sent Events (SSE) endpoint `GET /api/projects/{id}/jobs/metadata/stream` pushing real-time partition completion events, chunk counters, and diagnostic error alerts.
+  - [x] Implement frontend Batch Progress Modal:
+    - [x] Displays live partition progress bar (e.g., "Processing Part 2 of 5 — Chunk 45/100").
+    - [x] Shows diagnostic failure cards on crash.
+    - [x] Includes "Resume Extraction" button that restarts execution starting from the first incomplete partition.
+- [x] **Chunk Metadata Inspector & Manual Override Panel:**
+  - [x] Build slide-out side panel displaying metadata fields for the active chunk.
+  - [x] Allow inline editing of field values; automatically tag edited fields with `user_edited = true`.
+- [x] **Unit Tests for Metadata Extraction:**
+  - [x] Test dynamic Pydantic schema generation from arbitrary field configurations.
+  - [x] Test that batch checkpoints allow resuming from failed partition without re-running completed partitions.
+  - [x] Test that LLM output does not overwrite fields with `user_edited: true` when `force_overwrite = false`.
+  - [x] Execute `go t` to verify test suite passes.
 
 ## Semantic Auto-Splitting & Incremental Embeddings
 
