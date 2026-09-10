@@ -41,6 +41,7 @@ class ChunkMetadataResponse(BaseModel):
     field_slug: Optional[str] = None
     field_label: Optional[str] = None
     field_type: Optional[str] = None
+    is_required: bool = False
 
 class StartMetadataJobPayload(BaseModel):
     node_id: Optional[str] = None
@@ -180,7 +181,8 @@ async def get_node_metadata(project_id: str, node_id: str):
             COALESCE(m.user_edited, 0) as user_edited,
             s.field_slug,
             s.field_label,
-            s.field_type
+            s.field_type,
+            COALESCE(s.is_required, 0) as is_required
         FROM schema_fields s
         LEFT JOIN node_metadata m ON (
             m.node_id = ? AND (m.field_id = s.id OR m.field_id = s.field_slug)
@@ -213,6 +215,7 @@ async def get_node_metadata(project_id: str, node_id: str):
                 field_slug=slug,
                 field_label=label,
                 field_type=ftype,
+                is_required=bool(r["is_required"]),
             )
         )
 
@@ -220,7 +223,7 @@ async def get_node_metadata(project_id: str, node_id: str):
         cursor.execute(
             """
             SELECT m.id, m.node_id, m.field_id, m.field_value, m.user_edited,
-                   s.field_slug, s.field_label, s.field_type
+                   s.field_slug, s.field_label, s.field_type, COALESCE(s.is_required, 0) as is_required
             FROM node_metadata m
             LEFT JOIN schema_fields s ON (m.field_id = s.id OR m.field_id = s.field_slug)
             WHERE m.node_id = ?;
@@ -247,6 +250,7 @@ async def get_node_metadata(project_id: str, node_id: str):
                     field_slug=slug,
                     field_label=label,
                     field_type=ftype,
+                    is_required=bool(r["is_required"]),
                 )
             )
 

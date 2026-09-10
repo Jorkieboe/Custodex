@@ -17,13 +17,7 @@ const activeNode = computed<NodeItem | null>(() => {
 const activeHasMetadata = computed<boolean>(() => {
   if (!store.activeNodeId) return false
   if (store.nodesWithMetadata.has(store.activeNodeId)) return true
-  if (!store.activeNodeMetadata || store.activeNodeMetadata.length === 0) return false
-  return store.activeNodeMetadata.every((item) => {
-    if (item.field_value === null || item.field_value === undefined) return false
-    if (typeof item.field_value === 'string' && item.field_value.trim() === '') return false
-    if (Array.isArray(item.field_value) && item.field_value.length === 0) return false
-    return true
-  })
+  return store.isNodeFullyExtracted(store.activeNodeMetadata, store.schemaFields)
 })
 
 const paragraphNodes = computed<NodeItem[]>(() => {

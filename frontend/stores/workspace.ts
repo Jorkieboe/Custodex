@@ -300,17 +300,37 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     generateMetadataForNode,
     startAutogeneration,
     cancelAutogeneration,
-    loadProjectMetadataOverview
+    loadProjectMetadataOverview,
+    isNodeFullyExtracted
   }
 
-  function isNodeFullyExtracted(metaItems: ChunkMetadataItem[]): boolean {
+  function isNodeFullyExtracted(metaItems: ChunkMetadataItem[], schemaFieldsList?: SchemaField[]): boolean {
     if (!metaItems || metaItems.length === 0) return false
-    return metaItems.every((item) => {
+
+    const hasData = (item: ChunkMetadataItem): boolean => {
       if (item.field_value === null || item.field_value === undefined) return false
       if (typeof item.field_value === 'string' && item.field_value.trim() === '') return false
-      if (Array.isArray(item.field_value) && item.field_value.length === 0) return false
       return true
-    })
+    }
+
+    const isRequired = (item: ChunkMetadataItem): boolean => {
+      if (item.is_required !== undefined) return Boolean(item.is_required)
+      const list = schemaFieldsList || schemaFields.value
+      if (list && list.length > 0) {
+        const match = list.find((sf) => sf.id === item.field_id || sf.field_slug === item.field_slug || sf.field_slug === item.field_id)
+        if (match) return Boolean(match.is_required)
+      }
+      return false
+    }
+
+    const requiredItems = metaItems.filter(isRequired)
+    const optionalItems = metaItems.filter((item) => !isRequired(item))
+
+    if (requiredItems.length > 0) {
+      return requiredItems.every(hasData)
+    }
+
+    return optionalItems.some(hasData)
   }
 
   async function loadProjectMetadataOverview() {
@@ -322,7 +342,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         if (n.node_type === 'paragraph') {
           try {
             const meta = await fetchNodeMetadata(currentProject.value.id, n.id)
-            if (isNodeFullyExtracted(meta)) {
+            if (isNodeFullyExtracted(meta, schemaFields.value)) {
               nodesWithMetadata.value.add(n.id)
             }
           } catch {
@@ -512,7 +532,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       item.field_value = value
       item.user_edited = true
     }
-    if (isNodeFullyExtracted(activeNodeMetadata.value)) {
+    if (isNodeFullyExtracted(activeNodeMetadata.value, schemaFields.value)) {
       nodesWithMetadata.value.add(nodeId)
     } else {
       nodesWithMetadata.value.delete(nodeId)

@@ -89,6 +89,53 @@ describe('Metadata Workbench Store Actions', () => {
     expect(store.nodesWithMetadata.has('node_empty')).toBe(false)
   })
 
+  it('recognizes empty array as extracted metadata and respects optional fields', async () => {
+    const store = useWorkspaceStore()
+    store.schemaFields = [
+      {
+        id: 'f_title',
+        project_id: 'test_proj',
+        field_slug: 'title',
+        field_label: 'Title',
+        field_type: 'string',
+        description: '',
+        is_required: true,
+        order_index: 0
+      },
+      {
+        id: 'f_years',
+        project_id: 'test_proj',
+        field_slug: 'years',
+        field_label: 'Years',
+        field_type: 'array[number]',
+        description: '',
+        is_required: false,
+        order_index: 1
+      }
+    ]
+
+    // Required title filled, optional years is empty array [] -> extracted!
+    const items = [
+      { node_id: 'n1', field_id: 'f_title', field_value: 'Doc Title', user_edited: false, is_required: true },
+      { node_id: 'n1', field_id: 'f_years', field_value: [], user_edited: false, is_required: false }
+    ]
+    expect(store.isNodeFullyExtracted(items, store.schemaFields)).toBe(true)
+
+    // Required title filled, optional years is null -> still extracted!
+    const itemsWithNullOptional = [
+      { node_id: 'n1', field_id: 'f_title', field_value: 'Doc Title', user_edited: false, is_required: true },
+      { node_id: 'n1', field_id: 'f_years', field_value: null, user_edited: false, is_required: false }
+    ]
+    expect(store.isNodeFullyExtracted(itemsWithNullOptional, store.schemaFields)).toBe(true)
+
+    // Required title null -> not extracted!
+    const itemsWithNullRequired = [
+      { node_id: 'n1', field_id: 'f_title', field_value: null, user_edited: false, is_required: true },
+      { node_id: 'n1', field_id: 'f_years', field_value: [], user_edited: false, is_required: false }
+    ]
+    expect(store.isNodeFullyExtracted(itemsWithNullRequired, store.schemaFields)).toBe(false)
+  })
+
   it('updates metadata fields with user_edited true', async () => {
     const store = useWorkspaceStore()
     store.currentProject = {

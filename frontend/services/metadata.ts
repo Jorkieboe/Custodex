@@ -9,6 +9,7 @@ export interface ChunkMetadataItem {
   field_slug?: string
   field_label?: string
   field_type?: string
+  is_required?: boolean
 }
 
 export interface MetadataJobStatus {
