@@ -54,6 +54,41 @@ describe('Metadata Workbench Store Actions', () => {
     expect(store.isGeneratingSingle).toBeNull()
   })
 
+  it('does not mark node as extracted if any field is null', async () => {
+    const store = useWorkspaceStore()
+    store.currentProject = {
+      id: 'test_proj',
+      name: 'Test',
+      llm_model: 'local-model',
+      embedding_model: 'test-emb'
+    }
+
+    vi.spyOn(api, 'fetchProjectNodes').mockResolvedValueOnce([
+      {
+        id: 'node_empty',
+        document_id: 'doc_1',
+        parent_id: null,
+        node_type: 'paragraph',
+        text_content: 'sample text',
+        order_index: 0,
+        embedding_status: 'current'
+      }
+    ])
+
+    vi.spyOn(api, 'fetchNodeMetadata').mockResolvedValueOnce([
+      {
+        id: 1,
+        node_id: 'node_empty',
+        field_id: 'field_topic',
+        field_value: null,
+        user_edited: false
+      }
+    ])
+
+    await store.loadProjectMetadataOverview()
+    expect(store.nodesWithMetadata.has('node_empty')).toBe(false)
+  })
+
   it('updates metadata fields with user_edited true', async () => {
     const store = useWorkspaceStore()
     store.currentProject = {

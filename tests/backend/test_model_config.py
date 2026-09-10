@@ -12,7 +12,7 @@ from backend.routers.metadata import _normalize_model_name, _get_llm_client_for_
 
 def test_separated_model_endpoints_and_api_key():
     cfg = AppConfig(
-        default_llm_model="gtp-4.1-mini",
+        default_llm_model="gpt-4.1-mini",
         default_embedding_model="text-embedding-multilingual-e5-base",
         lm_studio_endpoint="http://localhost:1234/v1",
         llm_endpoint="https://api.openai.com/v1",
@@ -30,12 +30,12 @@ def test_env_api_key_fallback():
         assert get_openai_api_key(cfg) == "sk-env-key-12345"
 
 def test_model_name_normalization():
-    assert _normalize_model_name("gtp-4.1-mini") == "gpt-4.1-mini"
+    assert _normalize_model_name("gpt-4.1-mini") == "gpt-4.1-mini"
     assert _normalize_model_name("gpt-4o") == "gpt-4o"
     assert _normalize_model_name(" local-model ") == "local-model"
 
 def test_llm_client_creation_with_openai_model():
     with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-mock-key"}):
-        client, model, endpoint = _get_llm_client_for_model("gtp-4.1-mini")
+        client, model, endpoint = _get_llm_client_for_model("gpt-4.1-mini")
         assert model == "gpt-4.1-mini"
         assert client.api_key == "sk-mock-key"

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import {
+  apiClient,
   type Project,
   type DocumentSummary,
   type NodeItem,
@@ -302,15 +303,26 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     loadProjectMetadataOverview
   }
 
+  function isNodeFullyExtracted(metaItems: ChunkMetadataItem[]): boolean {
+    if (!metaItems || metaItems.length === 0) return false
+    return metaItems.every((item) => {
+      if (item.field_value === null || item.field_value === undefined) return false
+      if (typeof item.field_value === 'string' && item.field_value.trim() === '') return false
+      if (Array.isArray(item.field_value) && item.field_value.length === 0) return false
+      return true
+    })
+  }
+
   async function loadProjectMetadataOverview() {
     if (!currentProject.value) return
     try {
+      nodesWithMetadata.value.clear()
       const resp = await fetchProjectNodes(currentProject.value.id)
       for (const n of resp) {
         if (n.node_type === 'paragraph') {
           try {
             const meta = await fetchNodeMetadata(currentProject.value.id, n.id)
-            if (meta && meta.length > 0) {
+            if (isNodeFullyExtracted(meta)) {
               nodesWithMetadata.value.add(n.id)
             }
           } catch {
@@ -360,8 +372,17 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       last_error: null
     }
 
-    const sseUrl = `/api/projects/${currentProject.value.id}/metadata/stream`
+    const baseUrl = apiClient.defaults.baseURL || 'http://localhost:8000'
+    const sseUrl = `${baseUrl}/api/projects/${currentProject.value.id}/metadata/stream?force_overwrite=${Boolean(options.force_overwrite)}`
+
+    console.log(`[Custodex SSE] Initiating EventSource connection to: ${sseUrl}`)
+    console.log('[Custodex SSE] Current project:', currentProject.value)
+
     sseEventSource = new EventSource(sseUrl)
+
+    sseEventSource.onopen = (event) => {
+      console.log('[Custodex SSE] Stream connection OPENED successfully to:', sseUrl, event)
+    }
 
     const handleMessage = (data: any) => {
       if (data.status) metadataJobStatus.value.status = data.status
@@ -391,23 +412,44 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
     sseEventSource.onmessage = (event: MessageEvent) => {
       try {
+        console.log('[Custodex SSE] Received generic message:', event.data)
         const parsed = JSON.parse(event.data)
         handleMessage(parsed)
       } catch (err) {
-        console.error('Error parsing SSE event data:', err)
+        console.error('[Custodex SSE] Error parsing SSE event data:', err)
       }
     }
 
     sseEventSource.addEventListener('progress', (event: MessageEvent) => {
       try {
         const parsed = JSON.parse(event.data)
+        console.log(`[Custodex SSE Progress] Chunk ${parsed.completed_chunks}/${parsed.total_chunks}:`, parsed)
         handleMessage(parsed)
       } catch (err) {
-        console.error('Error parsing SSE progress event:', err)
+        console.error('[Custodex SSE] Error parsing SSE progress event:', err)
+      }
+    })
+
+    sseEventSource.addEventListener('failure', (event: MessageEvent) => {
+      try {
+        console.error('[Custodex SSE] Received failure event from backend:', event.data)
+        const parsed = JSON.parse(event.data)
+        metadataJobStatus.value.status = 'failed'
+        metadataJobStatus.value.last_error = parsed.last_error || 'Extraction failed on server'
+        if (sseEventSource) {
+          sseEventSource.close()
+          sseEventSource = null
+        }
+        if (activeNodeId.value) {
+          loadActiveNodeMetadata(activeNodeId.value)
+        }
+      } catch (err) {
+        console.error('[Custodex SSE] Error parsing SSE failure event:', err)
       }
     })
 
     sseEventSource.addEventListener('complete', (event: MessageEvent) => {
+      console.log('[Custodex SSE] Received complete event from backend:', event.data)
       metadataJobStatus.value.status = 'completed'
       if (sseEventSource) {
         sseEventSource.close()
@@ -418,25 +460,21 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       }
     })
 
-    sseEventSource.onerror = () => {
+    sseEventSource.onerror = (event) => {
+      const readyState = sseEventSource ? sseEventSource.readyState : 'unknown'
+      console.error(`[Custodex SSE Error] Connection error. readyState = ${readyState} (0=CONNECTING, 1=OPEN, 2=CLOSED). Target URL: ${sseUrl}`, event)
+
       if (metadataJobStatus.value.status === 'running') {
         metadataJobStatus.value.status = 'failed'
-        metadataJobStatus.value.last_error = 'SSE stream disconnected or failed'
+        if (!metadataJobStatus.value.last_error) {
+          metadataJobStatus.value.last_error = `Connection lost (EventSource state: ${readyState}). Ensure backend at ${baseUrl} is running.`
+        }
       }
       if (sseEventSource) {
         sseEventSource.close()
         sseEventSource = null
       }
     }
-
-    startMetadataJob(currentProject.value.id, options).catch((err: any) => {
-      metadataJobStatus.value.status = 'failed'
-      metadataJobStatus.value.last_error = err.message || 'Failed to start metadata job'
-      if (sseEventSource) {
-        sseEventSource.close()
-        sseEventSource = null
-      }
-    })
   }
 
   function cancelAutogeneration() {
@@ -474,6 +512,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       item.field_value = value
       item.user_edited = true
     }
+    if (isNodeFullyExtracted(activeNodeMetadata.value)) {
+      nodesWithMetadata.value.add(nodeId)
+    } else {
+      nodesWithMetadata.value.delete(nodeId)
+    }
   }
 
   function openInspector() {
@@ -509,6 +552,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!currentProject.value) return
     const created = await createSchemaField(currentProject.value.id, payload)
     schemaFields.value.push(created)
+    nodesWithMetadata.value.clear()
+    await loadProjectMetadataOverview()
     return created
   }
 
@@ -526,6 +571,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!currentProject.value) return
     await deleteSchemaField(currentProject.value.id, fieldId)
     schemaFields.value = schemaFields.value.filter((f: SchemaField) => f.id !== fieldId)
+    await loadProjectMetadataOverview()
   }
 
   async function reorderSchemaFields(newFields: SchemaField[]) {
@@ -533,5 +579,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     schemaFields.value = [...newFields]
     const updated = await replaceAllSchemaFields(currentProject.value.id, newFields)
     schemaFields.value = updated
+    await loadProjectMetadataOverview()
   }
 })

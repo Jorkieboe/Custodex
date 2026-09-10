@@ -1,10 +1,11 @@
+import asyncio
 import json
 import logging
 import re
 import sys
 import time
 from typing import Any, AsyncGenerator, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import openai
@@ -49,7 +50,9 @@ class StartMetadataJobPayload(BaseModel):
 
 def _normalize_model_name(name: str) -> str:
     cleaned = name.strip()
-    if cleaned.lower().startswith("gtp-"):
+    if cleaned.lower().startswith("gpts-"):
+        cleaned = "gpt-" + cleaned[5:]
+    elif cleaned.lower().startswith("gtp-"):
         cleaned = "gpt-" + cleaned[4:]
     return cleaned
 
@@ -68,6 +71,9 @@ def _get_llm_client_for_model(model_name: str) -> tuple[openai.OpenAI, str, str]
 
     if is_openai_model and not endpoint.strip():
         endpoint = "https://api.openai.com/v1"
+
+    masked_key = f"{api_key[:7]}...{api_key[-4:]}" if len(api_key) > 12 else ("present" if api_key else "MISSING")
+    logger.info("[LLM CONFIG] Model: '%s' (raw: '%s') | Endpoint: '%s' | API Key: %s", normalized_model, model_name, endpoint, masked_key)
 
     if is_openai_model:
         if not api_key:
@@ -107,9 +113,16 @@ def _extract_metadata_for_chunk(
     logger.info("[CHUNK TEXT SAMPLE] %s", chunk_text[:180].replace("\n", " ") + ("..." if len(chunk_text) > 180 else ""))
 
     t0 = time.time()
+    chosen_model = model_name
+    if "api.openai.com" in endpoint.lower() and chosen_model in ("gpt-4.1-mini", "gpts-4.1-mini", "gtp-4.1-mini"):
+        logger.info("[MODEL AUTO-MAP] OpenAI endpoint detected: re-mapping '%s' to standard 'gpt-4o-mini'", chosen_model)
+        chosen_model = "gpt-4o-mini"
+
+    logger.info("[METADATA CALL INITIATING] Model: %s | Endpoint: %s | Schema fields: %s", chosen_model, endpoint, [f.field_slug for f in schema_fields])
+
     try:
         response = client.chat.completions.create(
-            model=model_name,
+            model=chosen_model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -118,9 +131,12 @@ def _extract_metadata_for_chunk(
             temperature=0.1,
         )
     except Exception as exc:
-        logger.info("[RESPONSE FORMAT FALLBACK] Endpoint does not support type: json_object; retrying with plain text")
+        logger.info("[RESPONSE FORMAT FALLBACK] Failed structured output; retrying with plain text: %s", exc)
+        if "does not exist" in str(exc).lower() and ("4.1" in chosen_model):
+            chosen_model = "gpt-4o-mini"
+            logger.info("[RESPONSE FORMAT FALLBACK] Switched model to '%s'", chosen_model)
         response = client.chat.completions.create(
-            model=model_name,
+            model=chosen_model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -399,13 +415,16 @@ async def start_metadata_generation(project_id: str, payload: StartMetadataJobPa
     }
 
 @router.get("/metadata/stream")
-async def stream_metadata_generation(project_id: str):
+async def stream_metadata_generation(project_id: str, force_overwrite: bool = Query(default=False)):
+    logger.info(">>> [SSE ROUTE ENTER] GET /metadata/stream received for project_id=%s, force_overwrite=%s", project_id, force_overwrite)
+
     conn = get_project_connection(project_id)
     cursor = conn.cursor()
 
     cursor.execute("SELECT llm_model FROM projects WHERE id = ?;", (project_id,))
     proj_row = cursor.fetchone()
     model_name = proj_row["llm_model"] if proj_row else "gtp-4.1-mini"
+    logger.info("[SSE ROUTE] Project LLM Model from DB: '%s'", model_name)
 
     cursor.execute(
         """
@@ -418,9 +437,11 @@ async def stream_metadata_generation(project_id: str):
         (project_id,),
     )
     nodes_to_process = cursor.fetchall()
+    logger.info("[SSE ROUTE] Total paragraph chunks to process: %d", len(nodes_to_process))
 
     cursor.execute("SELECT * FROM schema_fields WHERE project_id = ? ORDER BY order_index ASC;", (project_id,))
     schema_fields = [SchemaFieldModel(**dict(r)) for r in cursor.fetchall()]
+    logger.info("[SSE ROUTE] Total schema fields configured: %d (%s)", len(schema_fields), [f.field_slug for f in schema_fields])
 
     async def event_generator() -> AsyncGenerator[str, None]:
         total_chunks = len(nodes_to_process)
@@ -429,17 +450,25 @@ async def stream_metadata_generation(project_id: str):
             yield f"event: complete\ndata: {done_payload}\n\n"
             return
 
+        initial_payload = {
+            "status": "running",
+            "completed_chunks": 0,
+            "total_chunks": total_chunks,
+            "completed_partitions": 0,
+            "total_partitions": 1,
+        }
+        yield f"event: progress\ndata: {json.dumps(initial_payload)}\n\n"
+
         client, active_model, endpoint = _get_llm_client_for_model(model_name)
         logger.info("[SSE METADATA RUN] Starting extraction on %s chunks using %s at %s", total_chunks, active_model, endpoint)
 
         completed = 0
         for node in nodes_to_process:
             node_id = node["id"]
-            cursor.execute("SELECT user_edited FROM node_metadata WHERE node_id = ? AND user_edited = 1;", (node_id,))
-            has_user_edited = bool(cursor.fetchone())
 
             try:
-                extracted = _extract_metadata_for_chunk(
+                extracted = await asyncio.to_thread(
+                    _extract_metadata_for_chunk,
                     client=client,
                     model_name=active_model,
                     endpoint=endpoint,
@@ -453,15 +482,27 @@ async def stream_metadata_generation(project_id: str):
                     for f in schema_fields:
                         if f.field_slug in extracted:
                             serialized = json.dumps(extracted[f.field_slug])
-                            conn.execute(
-                                """
-                                INSERT INTO node_metadata (node_id, field_id, field_value, user_edited)
-                                VALUES (?, ?, ?, 0)
-                                ON CONFLICT(node_id, field_id) DO UPDATE SET
-                                    field_value = CASE WHEN node_metadata.user_edited = 1 THEN node_metadata.field_value ELSE excluded.field_value END;
-                                """,
-                                (node_id, f.id, serialized),
-                            )
+                            if force_overwrite:
+                                conn.execute(
+                                    """
+                                    INSERT INTO node_metadata (node_id, field_id, field_value, user_edited)
+                                    VALUES (?, ?, ?, 0)
+                                    ON CONFLICT(node_id, field_id) DO UPDATE SET
+                                        field_value = excluded.field_value,
+                                        user_edited = 0;
+                                    """,
+                                    (node_id, f.id, serialized),
+                                )
+                            else:
+                                conn.execute(
+                                    """
+                                    INSERT INTO node_metadata (node_id, field_id, field_value, user_edited)
+                                    VALUES (?, ?, ?, 0)
+                                    ON CONFLICT(node_id, field_id) DO UPDATE SET
+                                        field_value = CASE WHEN node_metadata.user_edited = 1 THEN node_metadata.field_value ELSE excluded.field_value END;
+                                    """,
+                                    (node_id, f.id, serialized),
+                                )
 
                 completed += 1
                 progress_data = {
@@ -482,7 +523,7 @@ async def stream_metadata_generation(project_id: str):
                     "total_chunks": total_chunks,
                     "last_error": str(e),
                 }
-                yield f"event: error\ndata: {json.dumps(error_data)}\n\n"
+                yield f"event: failure\ndata: {json.dumps(error_data)}\n\n"
                 return
 
         final_data = {
@@ -494,4 +535,12 @@ async def stream_metadata_generation(project_id: str):
         }
         yield f"event: complete\ndata: {json.dumps(final_data)}\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
