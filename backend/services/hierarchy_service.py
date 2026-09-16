@@ -79,16 +79,7 @@ def split_node(conn: sqlite3.Connection, node_id: str, top_text: str, bottom_tex
             (child_node_id, original_doc_id, original_parent_id, bottom_text, child_order_index),
         )
 
-        cursor.execute("SELECT field_id, field_value, user_edited FROM node_metadata WHERE node_id = ?;", (node_id,))
-        metadata_rows = cursor.fetchall()
-        for m in metadata_rows:
-            conn.execute(
-                """
-                INSERT INTO node_metadata (node_id, field_id, field_value, user_edited)
-                VALUES (?, ?, ?, ?);
-                """,
-                (child_node_id, m["field_id"], m["field_value"], m["user_edited"]),
-            )
+        conn.execute("DELETE FROM node_metadata WHERE node_id = ?;", (node_id,))
 
     upper_node = NodeModel(
         id=node_id,
@@ -310,6 +301,8 @@ def detach_selection_to_header(conn: sqlite3.Connection, node_id: str, selection
     created_nodes: List[NodeModel] = []
 
     with conn:
+        conn.execute("DELETE FROM node_metadata WHERE node_id = ?;", (node_id,))
+
         if preceding_text:
             shift_order_indices(conn, doc_id, start_index=base_order + 1, delta=2 if succeeding_text else 1)
 

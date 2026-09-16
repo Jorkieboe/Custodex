@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { fetchProjects, createProject, type Project } from '../services/api'
+import { fetchProjects, createProject, fetchApiStatus, type Project } from '../services/api'
 import SettingsModal from './SettingsModal.vue'
 
 const emit = defineEmits<{
@@ -13,13 +13,20 @@ const showSettingsModal = ref(false)
 const manualProjectId = ref('')
 
 const newProjectName = ref('')
-const newProjectLLM = ref('local-model')
-const newProjectEmbedding = ref('text-embedding-nomic-embed-text-v1.5')
+const newProjectLLM = ref('gpt-4.1-mini')
+const newProjectEmbedding = ref('text-embedding-multilingual-e5-base')
 const isCreating = ref(false)
 const isLoading = ref(true)
 
 onMounted(async () => {
   await loadProjects()
+  try {
+    const status = await fetchApiStatus()
+    if (status.default_llm_model) newProjectLLM.value = status.default_llm_model
+    if (status.default_embedding_model) newProjectEmbedding.value = status.default_embedding_model
+  } catch (err) {
+    // Ignore status lookup failure
+  }
 })
 
 async function loadProjects() {
@@ -146,11 +153,11 @@ function handleOpenManual() {
           </div>
           <div class="form-group">
             <label>LLM Extraction Model</label>
-            <input v-model="newProjectLLM" type="text" placeholder="local-model" />
+            <input v-model="newProjectLLM" type="text" placeholder="gpt-4.1-mini" />
           </div>
           <div class="form-group">
             <label>Vector Embedding Model</label>
-            <input v-model="newProjectEmbedding" type="text" placeholder="text-embedding-nomic-embed-text-v1.5" />
+            <input v-model="newProjectEmbedding" type="text" placeholder="text-embedding-multilingual-e5-base" />
           </div>
         </div>
         <div class="modal-footer">

@@ -1,4 +1,22 @@
 {
   "name": "no todo",
-  "expanded_dirs": []
+  "expanded_dirs": [
+    "backend",
+    "backend/routers",
+    "backend/services",
+    "frontend",
+    "frontend/components",
+    "frontend/components/export",
+    "frontend/components/metadata",
+    "frontend/services",
+    "src",
+    "src/components",
+    "src/components/schema",
+    "src/routers",
+    "src/services",
+    "src/styles",
+    "tests",
+    "tests/backend",
+    "tests/frontend"
+  ]
 }

@@ -211,5 +211,101 @@
   },
   {
     "path": "frontend/services/embeddings.ts"
+  },
+  {
+    "path": "tests/frontend/embeddings.test.ts"
+  },
+  {
+    "path": "backend/routers/embeddings.py"
+  },
+  {
+    "path": "backend/routers/export.py"
+  },
+  {
+    "path": "backend/services/embedding_service.py"
+  },
+  {
+    "path": "backend/services/export_service.py"
+  },
+  {
+    "path": "backend/services/job_manager.py"
+  },
+  {
+    "path": "backend/services/metadata_extractor.py"
+  },
+  {
+    "path": "backend/services/validation_service.py"
+  },
+  {
+    "path": "frontend/components/export/ExportGateModal.vue"
+  },
+  {
+    "path": "frontend/components/metadata/BatchProgressModal.vue"
+  },
+  {
+    "path": "frontend/components/metadata/ChunkMetadataInspector.vue"
+  },
+  {
+    "path": "frontend/services/export.ts"
+  },
+  {
+    "path": "src/components/schema/FieldCard.vue"
+  },
+  {
+    "path": "src/components/schema/SchemaDesigner.vue"
+  },
+  {
+    "path": "src/routers/schema.py"
+  },
+  {
+    "path": "src/services/client.ts"
+  },
+  {
+    "path": "src/services/nodes.ts"
+  },
+  {
+    "path": "src/services/projects.ts"
+  },
+  {
+    "path": "src/services/schema.ts"
+  },
+  {
+    "path": "tests/backend/test_metadata_extraction.py"
+  },
+  {
+    "path": "tests/backend/test_schema.py"
+  },
+  {
+    "path": "tests/backend/test_validation_and_export.py"
+  },
+  {
+    "path": "tests/frontend/export.test.ts"
+  },
+  {
+    "path": "tests/frontend/schema.test.ts"
+  },
+  {
+    "path": "frontend/components/export/ExportView.vue"
+  },
+  {
+    "path": "tests/frontend/export_view.test.ts"
+  },
+  {
+    "path": "src/styles/variables.scss"
+  },
+  {
+    "path": "tests/backend/test_batch_recovery.py"
+  },
+  {
+    "path": "tests/backend/test_interleaved_workflows.py"
+  },
+  {
+    "path": "tests/frontend/components_views.test.ts"
+  },
+  {
+    "path": "tests/frontend/interleaved_and_resilience.test.ts"
+  },
+  {
+    "path": "frontend/components/schema/FieldCard.vue"
   }
 ]

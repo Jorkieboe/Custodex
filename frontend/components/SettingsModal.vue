@@ -7,7 +7,7 @@ const emit = defineEmits<{
 }>()
 
 const config = ref<AppConfig>({
-  default_llm_model: 'gtp-4.1-mini',
+  default_llm_model: 'gpt-4.1-mini',
   default_embedding_model: 'text-embedding-multilingual-e5-base',
   lm_studio_endpoint: 'http://localhost:1234/v1',
   llm_endpoint: 'https://api.openai.com/v1',
@@ -29,10 +29,14 @@ const isSaving = ref(false)
 onMounted(async () => {
   try {
     const loaded = await fetchAppConfig()
+    const fallbackEmbedding = (loaded.lm_studio_endpoint && !loaded.lm_studio_endpoint.includes('api.openai.com'))
+      ? loaded.lm_studio_endpoint
+      : 'http://localhost:1234/v1'
+
     config.value = {
       ...loaded,
-      llm_endpoint: loaded.llm_endpoint || loaded.lm_studio_endpoint || 'https://api.openai.com/v1',
-      embedding_endpoint: loaded.embedding_endpoint || loaded.lm_studio_endpoint || 'http://localhost:1234/v1',
+      llm_endpoint: loaded.llm_endpoint || 'https://api.openai.com/v1',
+      embedding_endpoint: loaded.embedding_endpoint || fallbackEmbedding,
       openai_api_key: loaded.openai_api_key || ''
     }
   } catch (err) {
@@ -45,11 +49,11 @@ async function testLlmConnection() {
   llmTestResult.value = null
   try {
     const status = await fetchApiStatus()
-    isLlmConnected.value = status.lm_studio_connected
-    if (status.lm_studio_connected) {
-      llmTestResult.value = 'Reachable: Generation service answered cleanly.'
+    isLlmConnected.value = status.llm_connected ?? status.lm_studio_connected
+    if (isLlmConnected.value) {
+      llmTestResult.value = 'Reachable: Generation LLM service answered cleanly.'
     } else {
-      llmTestResult.value = 'Endpoint not responding at ' + (config.value.llm_endpoint || config.value.lm_studio_endpoint)
+      llmTestResult.value = 'Endpoint not responding at ' + (config.value.llm_endpoint || 'https://api.openai.com/v1')
     }
   } catch (err: any) {
     isLlmConnected.value = false
@@ -63,9 +67,13 @@ async function testEmbedConnection() {
   isTestingEmbed.value = true
   embedTestResult.value = null
   try {
-    const target = config.value.embedding_endpoint || config.value.lm_studio_endpoint
-    embedTestResult.value = 'Configured embedding endpoint: ' + target
-    isEmbedConnected.value = true
+    const status = await fetchApiStatus()
+    isEmbedConnected.value = status.embedding_connected ?? status.lm_studio_connected
+    if (isEmbedConnected.value) {
+      embedTestResult.value = 'Reachable: Embedding service answered cleanly.'
+    } else {
+      embedTestResult.value = 'Endpoint not responding at ' + (config.value.embedding_endpoint || 'http://localhost:1234/v1')
+    }
   } catch (err: any) {
     isEmbedConnected.value = false
     embedTestResult.value = 'Error: ' + (err.message || 'Check endpoint')
@@ -77,9 +85,7 @@ async function testEmbedConnection() {
 async function saveSettings() {
   isSaving.value = true
   try {
-    if (!config.value.lm_studio_endpoint) {
-      config.value.lm_studio_endpoint = config.value.embedding_endpoint || config.value.llm_endpoint || 'http://localhost:1234/v1'
-    }
+    config.value.lm_studio_endpoint = config.value.embedding_endpoint || 'http://localhost:1234/v1'
     await updateAppConfig(config.value)
     emit('close')
   } catch (err) {

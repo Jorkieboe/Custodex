@@ -382,7 +382,7 @@ const compiledJsonSchema = computed(() => {
     color: $color-text-primary;
     border: 1px solid $color-border;
     &:hover {
-      background-color: lighten(#334155, 5%);
+      background-color: lighten($color-surface-hover, 6%);
     }
   }
 }

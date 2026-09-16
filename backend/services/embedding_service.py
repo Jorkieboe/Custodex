@@ -176,6 +176,8 @@ def run_partitioned_embeddings_refresh(
     targets = cursor.fetchall()
     total_targets = len(targets)
 
+    print(f"target: {total_targets}")
+
     if total_targets == 0:
         mgr = get_faiss_manager(project_id)
         mgr.sync_from_database(conn)
@@ -189,6 +191,8 @@ def run_partitioned_embeddings_refresh(
     total_partitions = (total_targets + batch_size - 1) // batch_size
     client, active_model, endpoint = get_embedding_client_for_model(model_name)
 
+    print(active_model)
+
     with conn:
         conn.execute(
             """
@@ -201,6 +205,7 @@ def run_partitioned_embeddings_refresh(
     processed_count = 0
 
     for p_idx in range(total_partitions):
+        print(f"do: {p_idx}")
         chunk_start = p_idx * batch_size
         chunk_end = min(chunk_start + batch_size, total_targets)
         part_nodes = targets[chunk_start:chunk_end]
@@ -212,13 +217,17 @@ def run_partitioned_embeddings_refresh(
         for row in part_nodes:
             ctx_payload = compile_contextual_payload(conn, row["id"])
             payloads.append(ctx_payload)
+        print(client)
 
         try:
             resp = client.embeddings.create(
                 model=active_model,
                 input=payloads,
             )
+            print(resp)
             vectors = [item.embedding for item in resp.data]
+
+            print(vectors)
 
             with conn:
                 for i, row in enumerate(part_nodes):
@@ -282,6 +291,8 @@ def run_partitioned_embeddings_refresh(
 
     mgr = get_faiss_manager(project_id)
     mgr.sync_from_database(conn)
+
+    print("return chunks")
 
     return {
         "status": "completed",

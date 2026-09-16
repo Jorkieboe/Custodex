@@ -12,9 +12,13 @@ def test_get_status_online():
     data = response.json()
     assert data["status"] == "online"
     assert "lm_studio_endpoint" in data
+    assert "llm_endpoint" in data
+    assert "embedding_endpoint" in data
     assert "default_llm_model" in data
     assert "default_embedding_model" in data
     assert isinstance(data["lm_studio_connected"], bool)
+    assert isinstance(data["llm_connected"], bool)
+    assert isinstance(data["embedding_connected"], bool)
 
 @patch("httpx.AsyncClient.get")
 def test_get_status_lm_studio_connected(mock_get):

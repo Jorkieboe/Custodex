@@ -31,7 +31,11 @@ import {
   previewSemanticSplits,
   acceptSemanticSplits,
   checkEmbeddingModelSwitch,
-  fetchEmbeddingStatus
+  fetchEmbeddingStatus,
+  type ValidationResult,
+  type ValidationBlocker,
+  fetchProjectValidation,
+  downloadExportBundle
 } from '../services/api'
 
 export type WorkspaceStep = 'ingestion' | 'chunks' | 'schema' | 'metadata' | 'embeddings' | 'export'
@@ -66,6 +70,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const selectedNodeIds = ref<Set<string>>(new Set())
   const currentStep = ref<WorkspaceStep>('chunks')
   const isLoading = ref<boolean>(false)
+  const isValidating = ref<boolean>(false)
+  const isExportModalOpen = ref<boolean>(false)
+  const validationResult = ref<ValidationResult | null>(null)
   const errorMessage = ref<string | null>(null)
 
   const currentEmbeddingCounts = computed(() => {
@@ -185,6 +192,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         topText,
         bottomText
       )
+      nodesWithMetadata.value.delete(nodeId)
+      if (activeNodeId.value === nodeId) {
+        await loadActiveNodeMetadata(nodeId)
+      }
       await reloadNodes()
       return [updatedUpper, newLower]
     } catch (err: any) {
@@ -324,7 +335,66 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     acceptAllProposedSplits,
     rejectProposedSplit,
     refreshEmbeddingsStream,
-    validateModelSwitch
+    validateModelSwitch,
+    isValidating,
+    isExportModalOpen,
+    validationResult,
+    runValidation,
+    openExportModal,
+    closeExportModal,
+    navigateToBlocker,
+    executeBundleDownload
+  }
+
+  async function runValidation(): Promise<ValidationResult | null> {
+    if (!currentProject.value) return null
+    isValidating.value = true
+    try {
+      const res = await fetchProjectValidation(currentProject.value.id)
+      validationResult.value = res
+      return res
+    } catch (err: any) {
+      console.error('Project validation check failed:', err)
+      errorMessage.value = err.message || 'Failed to validate project'
+      return null
+    } finally {
+      isValidating.value = false
+    }
+  }
+
+  function openExportModal() {
+    isExportModalOpen.value = true
+    runValidation()
+  }
+
+  function closeExportModal() {
+    isExportModalOpen.value = false
+  }
+
+  function navigateToBlocker(blocker: ValidationBlocker) {
+    selectNode(blocker.node_id)
+    if (blocker.rule === 'uncalculated_embedding') {
+      currentStep.value = 'embeddings'
+    } else if (blocker.rule === 'schema_violation') {
+      currentStep.value = 'metadata'
+      openInspector()
+    } else {
+      currentStep.value = 'chunks'
+    }
+    isExportModalOpen.value = false
+  }
+
+  async function executeBundleDownload() {
+    if (!currentProject.value) return
+    const { blob, filename } = await downloadExportBundle(currentProject.value.id)
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
   }
 
   function setAutoSplitRange(min: number, max: number, preset: 'fine' | 'standard' | 'large' | 'custom' = 'custom') {
@@ -356,6 +426,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (indices.length === 0) return
 
     await acceptSemanticSplits(currentProject.value.id, [{ node_id: nodeId, split_indices: indices }])
+    nodesWithMetadata.value.delete(nodeId)
+    if (activeNodeId.value === nodeId) {
+      await loadActiveNodeMetadata(nodeId)
+    }
     semanticSplitProposals.value.delete(nodeId)
     await reloadNodes()
   }
@@ -367,11 +441,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       const indices = prev.proposed_splits.map(s => s.split_index)
       if (indices.length > 0) {
         items.push({ node_id: nId, split_indices: indices })
+        nodesWithMetadata.value.delete(nId)
       }
     }
     if (items.length === 0) return
 
     await acceptSemanticSplits(currentProject.value.id, items)
+    if (activeNodeId.value && items.some(i => i.node_id === activeNodeId.value)) {
+      await loadActiveNodeMetadata(activeNodeId.value)
+    }
     semanticSplitProposals.value.clear()
     await reloadNodes()
   }

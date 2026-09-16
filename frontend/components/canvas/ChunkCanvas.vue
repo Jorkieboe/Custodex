@@ -87,7 +87,7 @@ function canMerge(index: number): boolean {
 <template>
   <div class="chunk-canvas-wrapper" @click="clearSelection">
     <!-- Autosplit Token Range Configuration Bar -->
-    <div v-if="store.nodes.length > 0" class="autosplit-config-bar">
+    <div v-if="store.nodes.length > 0 && store.currentStep == 'chunks'" class="autosplit-config-bar">
       <div class="config-title">
         <span class="bolt-icon">⚡</span>
         <span>Chunk Token Budget:</span>

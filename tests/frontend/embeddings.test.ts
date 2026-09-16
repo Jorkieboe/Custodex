@@ -7,6 +7,8 @@ describe('Semantic Splitting and Embeddings Store Actions', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
+    vi.spyOn(api, 'fetchProjectNodes').mockResolvedValue([])
+    vi.spyOn(api, 'fetchProjectDocuments').mockResolvedValue([])
   })
 
   it('manages semantic split preview and candidate rejection', async () => {
@@ -45,6 +47,34 @@ describe('Semantic Splitting and Embeddings Store Actions', () => {
     expect(store.semanticSplitProposals.has('node_alpha')).toBe(false)
   })
 
+  it('accepts single proposed split for a node', async () => {
+    const store = useWorkspaceStore()
+    store.currentProject = {
+      id: 'proj_embed',
+      name: 'Embeddings Proj',
+      llm_model: 'mock-llm',
+      embedding_model: 'mock-emb'
+    }
+
+    store.semanticSplitProposals.set('n1', {
+      node_id: 'n1',
+      document_id: 'doc_1',
+      original_text: 'First slice. Second slice.',
+      order_index: 0,
+      proposed_splits: [{ split_index: 12, confidence: 0.85, before_snippet: '', after_snippet: '' }],
+      proposed_slices: [{ text: 'First slice.', token_count: 3 }, { text: 'Second slice.', token_count: 3 }]
+    })
+
+    const acceptSpy = vi.spyOn(api, 'acceptSemanticSplits').mockResolvedValueOnce([
+      { id: 'n1', document_id: 'd', parent_id: null, node_type: 'paragraph', text_content: 'First slice.', order_index: 0, embedding_status: 'stale' },
+      { id: 'n2', document_id: 'd', parent_id: null, node_type: 'paragraph', text_content: 'Second slice.', order_index: 1, embedding_status: 'missing' }
+    ])
+
+    await store.acceptProposedSplit('n1', [12])
+    expect(acceptSpy).toHaveBeenCalledWith('proj_embed', [{ node_id: 'n1', split_indices: [12] }])
+    expect(store.semanticSplitProposals.has('n1')).toBe(false)
+  })
+
   it('accepts all semantic splits in batch', async () => {
     const store = useWorkspaceStore()
     store.currentProject = {
@@ -67,7 +97,6 @@ describe('Semantic Splitting and Embeddings Store Actions', () => {
       { id: 'n1', document_id: 'd', parent_id: null, node_type: 'paragraph', text_content: 'Text 1.', order_index: 0, embedding_status: 'stale' },
       { id: 'n2', document_id: 'd', parent_id: null, node_type: 'paragraph', text_content: 'Text 2.', order_index: 1, embedding_status: 'missing' }
     ])
-    vi.spyOn(api, 'fetchProjectNodes').mockResolvedValueOnce([])
 
     await store.acceptAllProposedSplits()
     expect(acceptSpy).toHaveBeenCalledWith('proj_embed', [{ node_id: 'n1', split_indices: [8] }])
@@ -91,5 +120,29 @@ describe('Semantic Splitting and Embeddings Store Actions', () => {
     const res = await store.validateModelSwitch('model-b', true)
     expect(res?.action).toBe('switched')
     expect(store.currentProject.embedding_model).toBe('model-b')
+  })
+
+  it('triggers refreshEmbeddingsStream and sets isEmbeddingRefreshing to true', () => {
+    const store = useWorkspaceStore()
+    store.currentProject = {
+      id: 'proj_embed_test',
+      name: 'Embeddings Proj',
+      llm_model: 'mock-llm',
+      embedding_model: 'test-emb'
+    }
+
+    const mockEventSource = vi.fn().mockImplementation(() => ({
+      addEventListener: vi.fn(),
+      close: vi.fn(),
+      onerror: null
+    }))
+    vi.stubGlobal('EventSource', mockEventSource)
+
+    store.refreshEmbeddingsStream()
+    expect(store.isEmbeddingRefreshing).toBe(true)
+    expect(mockEventSource).toHaveBeenCalledWith(
+      'http://localhost:8000/api/projects/proj_embed_test/embeddings/stream?batch_size=16'
+    )
+    vi.unstubAllGlobals()
   })
 })

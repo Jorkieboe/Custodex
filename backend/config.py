@@ -27,23 +27,25 @@ def _load_env_file() -> None:
 _load_env_file()
 
 class AppConfig(BaseModel):
-    default_llm_model: str = Field(default="gtp-4.1-mini")
+    default_llm_model: str = Field(default="gpt-4.1-mini")
     default_embedding_model: str = Field(default="text-embedding-multilingual-e5-base")
     lm_studio_endpoint: str = Field(default="http://localhost:1234/v1")
-    llm_endpoint: str = Field(default="")
-    embedding_endpoint: str = Field(default="")
+    llm_endpoint: str = Field(default="https://api.openai.com/v1")
+    embedding_endpoint: str = Field(default="http://localhost:1234/v1")
     openai_api_key: str = Field(default="")
     recent_projects: List[str] = Field(default_factory=list)
 
 def get_llm_endpoint(config: AppConfig) -> str:
     if config.llm_endpoint and config.llm_endpoint.strip():
         return config.llm_endpoint.strip()
-    return config.lm_studio_endpoint.strip() if config.lm_studio_endpoint else "http://localhost:1234/v1"
+    return "https://api.openai.com/v1"
 
 def get_embedding_endpoint(config: AppConfig) -> str:
     if config.embedding_endpoint and config.embedding_endpoint.strip():
         return config.embedding_endpoint.strip()
-    return config.lm_studio_endpoint.strip() if config.lm_studio_endpoint else "http://localhost:1234/v1"
+    if config.lm_studio_endpoint and config.lm_studio_endpoint.strip() and "api.openai.com" not in config.lm_studio_endpoint.lower():
+        return config.lm_studio_endpoint.strip()
+    return "http://localhost:1234/v1"
 
 def get_openai_api_key(config: Optional[AppConfig] = None) -> str:
     if config and config.openai_api_key and config.openai_api_key.strip():

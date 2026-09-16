@@ -7,6 +7,8 @@ import IngestionView from './components/IngestionView.vue'
 import ChunkCanvas from './components/canvas/ChunkCanvas.vue'
 import SchemaDesigner from './components/schema/SchemaDesigner.vue'
 import MetadataView from './components/metadata/MetadataView.vue'
+import ExportView from './components/export/ExportView.vue'
+import ExportGateModal from './components/export/ExportGateModal.vue'
 import SettingsModal from './components/SettingsModal.vue'
 
 const store = useWorkspaceStore()
@@ -59,25 +61,22 @@ function handleBackToHub() {
               <h3>Embedding Status & Incremental Refresh</h3>
               <p>Status indicators are active. Synchronized: {{ store.currentEmbeddingCounts.current }} | Stale: {{ store.currentEmbeddingCounts.stale }} | Missing: {{ store.currentEmbeddingCounts.missing }}</p>
             </div>
-            <button class="btn btn-primary">
-              Refresh Stale Embeddings
+            <button
+              class="btn btn-primary"
+              :disabled="store.isEmbeddingRefreshing"
+              @click="store.refreshEmbeddingsStream"
+            >
+              {{ store.isEmbeddingRefreshing ? 'Refreshing Embeddings...' : 'Refresh Stale Embeddings' }}
             </button>
           </div>
           <ChunkCanvas />
         </div>
 
-        <!-- Step 6: Export Placeholder -->
-        <div v-else-if="store.currentStep === 'export'" class="step-placeholder">
-          <div class="placeholder-card">
-            <h2>Validation Gate & RAG Bundle Exporter</h2>
-            <p>Verification engine will ensure dataset completeness prior to packaging.</p>
-            <button class="btn btn-primary" @click="store.setStep('chunks')">
-              Return to Chunk Canvas
-            </button>
-          </div>
-        </div>
+        <!-- Step 6: Export -->
+        <ExportView v-else-if="store.currentStep === 'export'" />
       </main>
 
+      <ExportGateModal />
       <SettingsModal v-if="showSettings" @close="showSettings = false" />
     </div>
   </div>

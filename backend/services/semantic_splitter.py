@@ -196,6 +196,8 @@ def accept_semantic_split(
             delta=new_slices_count,
         )
 
+        conn.execute("DELETE FROM node_metadata WHERE node_id = ?;", (target.id,))
+
         conn.execute(
             """
             UPDATE nodes

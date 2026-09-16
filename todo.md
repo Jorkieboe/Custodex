@@ -230,48 +230,48 @@ graph TD
 
 **Goal:** Implement the pre-export validation rules, remediation UI, and deterministic RAG bundle packager.
 
-- [ ] **Validation Gate Engine:**
-  - [ ] Implement backend validation function `validate_project(project_id)` executing strict integrity checks:
-    - [ ] Rule 1: No chunk contains empty or whitespace-only `text_content`.
-    - [ ] Rule 2: No chunk has `embedding_status != 'current'` (all chunks must be calculated and up-to-date).
-    - [ ] Rule 3: All chunk metadata validates strictly against the active schema (required fields present, type constraints satisfied, no unresolved merge conflict markers).
-  - [ ] Return structured diagnostic response detailing blocking issues, offending node UUIDs, and remediation suggestions.
-- [ ] **Validation Remediation UI:**
-  - [ ] Build Export Validation Gate modal that triggers on "Export RAG Scheme" click.
-  - [ ] If issues exist, block export button and display actionable blocker list:
-    - [ ] Direct one-click links that navigate the visual canvas to offending chunks, automatically routing to the Embedding Refresh step or activating a canvas diagnostic highlight so vector blockers are clearly visible.
-    - [ ] Direct action button: "Generate All Missing/Stale Embeddings" to resolve vector blockers immediately.
-- [ ] **RAG Scheme Bundle Exporter:**
-  - [ ] Implement export packager compiling project artifacts:
-    - [ ] `db.faiss`: Serialized FAISS CPU vector index with vector positions aligned to chunk sequence.
-    - [ ] `dbmetadata.json`: Deterministic JSON mapping FAISS positions to chunk UUIDs, document `order_index`, raw text, parent hierarchy breadcrumb paths, and metadata key-values.
-    - [ ] `metadatascheme.json`: Self-describing active JSON Schema used to generate the dataset.
-  - [ ] Package files into `<project-name>-rag-bundle.zip` and stream download via `GET /api/projects/{id}/export`.
-- [ ] **Unit Tests for Validation Gate & Bundle Generation:**
-  - [ ] Test that export is blocked if a single chunk is `stale` or `missing`.
-  - [ ] Test that export is blocked if a chunk contains whitespace only.
-  - [ ] Test that successful export produces a valid ZIP archive containing identical vector counts between `db.faiss` and `dbmetadata.json`.
-  - [ ] Execute `go t` to verify test suite passes.
+- [x] **Validation Gate Engine:**
+  - [x] Implement backend validation function `validate_project(project_id)` executing strict integrity checks:
+    - [x] Rule 1: No chunk contains empty or whitespace-only `text_content`.
+    - [x] Rule 2: No chunk has `embedding_status != 'current'` (all chunks must be calculated and up-to-date).
+    - [x] Rule 3: All chunk metadata validates strictly against the active schema (required fields present, type constraints satisfied, no unresolved merge conflict markers).
+  - [x] Return structured diagnostic response detailing blocking issues, offending node UUIDs, and remediation suggestions.
+- [x] **Validation Remediation UI:**
+  - [x] Build Export Validation Gate modal that triggers on "Export RAG Scheme" click.
+  - [x] If issues exist, block export button and display actionable blocker list:
+    - [x] Direct one-click links that navigate the visual canvas to offending chunks, automatically routing to the Embedding Refresh step or activating a canvas diagnostic highlight so vector blockers are clearly visible.
+    - [x] Direct action button: "Generate All Missing/Stale Embeddings" to resolve vector blockers immediately.
+- [x] **RAG Scheme Bundle Exporter:**
+  - [x] Implement export packager compiling project artifacts:
+    - [x] `db.faiss`: Serialized FAISS CPU vector index with vector positions aligned to chunk sequence.
+    - [x] `dbmetadata.json`: Deterministic JSON mapping FAISS positions to chunk UUIDs, document `order_index`, raw text, parent hierarchy breadcrumb paths, and metadata key-values.
+    - [x] `metadatascheme.json`: Self-describing active JSON Schema used to generate the dataset.
+  - [x] Package files into `<project-name>-rag-bundle.zip` and stream download via `GET /api/projects/{id}/export`.
+- [x] **Unit Tests for Validation Gate & Bundle Generation:**
+  - [x] Test that export is blocked if a single chunk is `stale` or `missing`.
+  - [x] Test that export is blocked if a chunk contains whitespace only.
+  - [x] Test that successful export produces a valid ZIP archive containing identical vector counts between `db.faiss` and `dbmetadata.json`.
+  - [x] Execute `go t` to verify test suite passes.
 
 ## Unit Testing
 
 **Goal:** Execute comprehensive unit test suites covering edge cases, non-linear navigation, error resilience, and invariant guarantees.
 
-- [ ] **Interleaved Mutation & Non-Linear Workflows Suite:**
-  - [ ] Write tests verifying that jumping between chunk splitting and metadata extraction does not corrupt data bindings.
-  - [ ] Assert that splitting a chunk with pre-existing metadata retains values on the original slice and initializes the child slice cleanly.
-  - [ ] Assert that adding a new document mid-project does not invalidate existing valid embeddings or metadata.
-- [ ] **Batch Failure & Checkpoint Recovery Suite:**
-  - [ ] Simulate network drop and OOM crash during partition 2 of 5.
-  - [ ] Verify that partition 1 remains safely committed in SQLite.
-  - [ ] Verify that triggering resume continues directly from partition 2 without duplicating records.
-- [ ] **Frontend Component & Store Tests:**
-  - [ ] Test Pinia workspace store dirty state transitions and step-conditional visibility of embedding indicator pills.
-  - [ ] Test Tiptap custom node view actions for double-enter hover split divider, right-click context menu split, inline header detaching, and step-aware UI element visibility.
-  - [ ] Test inline semantic split candidate rendering (double-enter gap with dotted line, Accept/Reject buttons) and batch "Accept All" flow.
-  - [ ] Test schema designer field addition, validation rule enforcement, and UUID stability.
-- [ ] **Testing Point 4: Full Automated Test Verification:**
-  - [ ] Execute `go t` (running `uv run pytest` and Vitest) and ensure all test suites pass with zero warnings and zero failures.
+- [x] **Interleaved Mutation & Non-Linear Workflows Suite:**
+  - [x] Write tests verifying that jumping between chunk splitting and metadata extraction does not corrupt data bindings.
+  - [x] Assert that splitting a chunk with pre-existing metadata retains values on the original slice and initializes the child slice cleanly.
+  - [x] Assert that adding a new document mid-project does not invalidate existing valid embeddings or metadata.
+- [x] **Batch Failure & Checkpoint Recovery Suite:**
+  - [x] Simulate network drop and OOM crash during partition 2 of 5.
+  - [x] Verify that partition 1 remains safely committed in SQLite.
+  - [x] Verify that triggering resume continues directly from partition 2 without duplicating records.
+- [x] **Frontend Component & Store Tests:**
+  - [x] Test Pinia workspace store dirty state transitions and step-conditional visibility of embedding indicator pills.
+  - [x] Test Tiptap custom node view actions for double-enter hover split divider, right-click context menu split, inline header detaching, and step-aware UI element visibility.
+  - [x] Test inline semantic split candidate rendering (double-enter gap with dotted line, Accept/Reject buttons) and batch "Accept All" flow.
+  - [x] Test schema designer field addition, validation rule enforcement, and UUID stability.
+- [x] **Testing Point 4: Full Automated Test Verification:**
+  - [x] Execute `go t` (running `uv run pytest` and Vitest) and ensure all test suites pass with zero warnings and zero failures.
 
 ## Polish
 

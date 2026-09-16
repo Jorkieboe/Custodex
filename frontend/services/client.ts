@@ -26,6 +26,8 @@ export interface ApiStatus {
   has_openai_api_key?: boolean
   default_llm_model: string
   default_embedding_model: string
+  llm_connected?: boolean
+  embedding_connected?: boolean
 }
 
 export async function fetchApiStatus(): Promise<ApiStatus> {

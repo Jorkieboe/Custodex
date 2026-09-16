@@ -151,5 +151,44 @@
   },
   {
     "path": "tests/frontend/embeddings.test.ts"
+  },
+  {
+    "path": "backend/services/validation_service.py"
+  },
+  {
+    "path": "backend/services/export_service.py"
+  },
+  {
+    "path": "backend/routers/export.py"
+  },
+  {
+    "path": "frontend/services/export.ts"
+  },
+  {
+    "path": "frontend/components/export/ExportGateModal.vue"
+  },
+  {
+    "path": "tests/backend/test_validation_and_export.py"
+  },
+  {
+    "path": "tests/frontend/export.test.ts"
+  },
+  {
+    "path": "src/styles/variables.scss"
+  },
+  {
+    "path": "frontend/styles/variables.scss"
+  },
+  {
+    "path": "tests/backend/test_interleaved_workflows.py"
+  },
+  {
+    "path": "tests/backend/test_batch_recovery.py"
+  },
+  {
+    "path": "tests/frontend/interleaved_and_resilience.test.ts"
+  },
+  {
+    "path": "tests/frontend/components_views.test.ts"
   }
 ]

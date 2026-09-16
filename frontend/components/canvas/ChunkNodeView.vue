@@ -118,7 +118,7 @@ const contextMenuItems = computed(() => {
   if (store.currentStep === 'embeddings') {
     items.push({
       label: 'Generate Embeddings',
-      action: () => {},
+      action: () => store.refreshEmbeddingsStream(),
     })
   }
 
@@ -403,7 +403,6 @@ function handleSegmentMouseUp(idx: number) {
     </div>
 
     <div class="chunk-body">
-   
 
       <template v-if="activeProposal && activeProposal.proposed_splits.length > 0">
         <div class="proposed-review-container">
@@ -745,7 +744,6 @@ function handleSegmentMouseUp(idx: number) {
   width: 100%;
   justify-content: center;
 }
-
 
 .confidence-tag {
   font-size: 10px;

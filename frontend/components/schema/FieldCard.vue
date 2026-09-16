@@ -37,7 +37,6 @@ function triggerSave() {
 }
 
 function handleLabelInput() {
-  // If slug matches former slugified label, keep it in sync
   triggerSave()
 }
 

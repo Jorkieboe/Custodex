@@ -105,7 +105,7 @@ async def refresh_embeddings_sync(project_id: str, payload: StartEmbeddingPayloa
 @router.get("/stream")
 async def stream_embedding_generation(project_id: str, batch_size: int = Query(default=16)):
     conn = get_project_connection(project_id)
-
+    print('do stream')
     async def event_generator() -> AsyncGenerator[str, None]:
         queue: asyncio.Queue = asyncio.Queue()
 
@@ -144,6 +144,7 @@ async def stream_embedding_generation(project_id: str, batch_size: int = Query(d
 
         def worker():
             try:
+                print('worker running')
                 result = run_partitioned_embeddings_refresh(
                     conn=conn,
                     project_id=project_id,

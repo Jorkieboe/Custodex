@@ -250,7 +250,7 @@ function handleValueChange(fieldId: string, rawVal: any, fieldType: string) {
   font-weight: 500;
 
   &.badge-human {
-    background-color: rgba(56, 189, 248, 0.15);
+    background-color: rgba(16, 185, 129, 0.15);
     color: $color-primary;
   }
 
