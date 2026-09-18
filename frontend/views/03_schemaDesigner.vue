@@ -479,6 +479,7 @@ async function handleToggleRequired(field: SchemaField) {
 
 .btn {
   padding: 8px 16px;
+  font-size: 16px;
   border-radius: $radius-md;
   font-weight: 500;
   cursor: pointer;

@@ -513,9 +513,9 @@ async function handlePrimaryButtonAction() {
 .btn-large-regenerate {
   background-color: #e69138;
   color: #ffffff;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
-  padding: 12px 36px;
+  padding: 8px 16px;
   border-radius: 0;
   cursor: pointer;
   transition: all 0.15s ease;

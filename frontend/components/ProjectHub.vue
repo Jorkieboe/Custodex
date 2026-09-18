@@ -350,6 +350,7 @@ function handleOpenManual() {
 
 .btn {
   padding: 8px 16px;
+  font-size: 16px;
   border-radius: $radius-md;
   font-weight: 500;
   cursor: pointer;
@@ -357,7 +358,7 @@ function handleOpenManual() {
 
   &.btn-large {
     padding: 10px 24px;
-    font-size: 15px;
+    font-size: 16px;
   }
 
   &.btn-primary {

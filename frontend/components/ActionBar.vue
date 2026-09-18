@@ -271,7 +271,7 @@ const progressPercentage = computed(() => {
           >
             {{ store.isEmbeddingRefreshing ? 'Refreshing Embeddings...' : '⚡ Refresh Stale Embeddings' }}
           </button>
-          
+
         </div>
       </div>
     </div>
@@ -285,13 +285,13 @@ const progressPercentage = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 20px;
+  padding: 0px 20px;
   background-color: $color-surface;
   border-bottom: 1px solid $color-border;
   font-size: 13px;
   position: relative;
   z-index: 100;
-  min-height: 44px;
+  height: $action-bar-height;
 }
 
 .selection-left {

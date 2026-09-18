@@ -37,7 +37,7 @@ const counts = computed(() => store.currentEmbeddingCounts)
         :class="{ active: store.currentStep === step.id }"
         @click="store.setStep(step.id)"
       >
-      
+
         <span class="step-label">{{ step.label }}</span>
         <span
           v-if="step.id === 'embeddings' && (counts.stale > 0 || counts.missing > 0)"
@@ -81,7 +81,7 @@ const counts = computed(() => store.currentEmbeddingCounts)
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   color: #1e1b18;
   padding: 6px 12px;
@@ -112,11 +112,11 @@ const counts = computed(() => store.currentEmbeddingCounts)
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 2px 8px;
+  padding: 6px 12px;
   border-radius: 10px;
   color: #fff;
   background-color: rgba(0, 0, 0, 0.08);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   transition: all 0.15s ease;
   width: 128px;
@@ -173,10 +173,10 @@ const counts = computed(() => store.currentEmbeddingCounts)
 }
 
 .settings-btn {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: #2c1e08;
-  padding: 6px 12px;
+  padding: 8px 16px;
   border-radius: $radius-md;
   background-color: rgba(0, 0, 0, 0.08);
   transition: all 0.15s ease;
