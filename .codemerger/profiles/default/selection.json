@@ -72,31 +72,10 @@
     "path": "tests/frontend/workspace.test.ts"
   },
   {
-    "path": "src/routers/schema.py"
-  },
-  {
     "path": "tests/backend/test_schema.py"
   },
   {
-    "path": "src/components/schema/FieldCard.vue"
-  },
-  {
-    "path": "src/components/schema/SchemaDesigner.vue"
-  },
-  {
     "path": "tests/frontend/schema.test.ts"
-  },
-  {
-    "path": "src/services/client.ts"
-  },
-  {
-    "path": "src/services/projects.ts"
-  },
-  {
-    "path": "src/services/nodes.ts"
-  },
-  {
-    "path": "src/services/schema.ts"
   },
   {
     "path": "frontend/components/metadata/BatchProgressModal.vue"
@@ -172,9 +151,6 @@
   },
   {
     "path": "tests/frontend/export.test.ts"
-  },
-  {
-    "path": "src/styles/variables.scss"
   },
   {
     "path": "frontend/styles/variables.scss"

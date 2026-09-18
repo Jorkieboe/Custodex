@@ -11,6 +11,7 @@ from pydantic import BaseModel
 import openai
 
 from backend.config import (
+    create_openai_client,
     get_embedding_endpoint,
     get_llm_endpoint,
     get_openai_api_key,
@@ -76,12 +77,9 @@ def _get_llm_client_for_model(model_name: str) -> tuple[openai.OpenAI, str, str]
     masked_key = f"{api_key[:7]}...{api_key[-4:]}" if len(api_key) > 12 else ("present" if api_key else "MISSING")
     logger.info("[LLM CONFIG] Model: '%s' (raw: '%s') | Endpoint: '%s' | API Key: %s", normalized_model, model_name, endpoint, masked_key)
 
-    if is_openai_model:
-        if not api_key:
-            logger.warning("[AUTH WARNING] OpenAI model '%s' requested, but no OPENAI_API_KEY found in config or .env", normalized_model)
-        client = openai.OpenAI(base_url=endpoint.rstrip("/"), api_key=api_key or "missing-key")
-    else:
-        client = openai.OpenAI(base_url=endpoint.rstrip("/"), api_key=api_key or "lm-studio")
+    if is_openai_model and not api_key:
+        logger.warning("[AUTH WARNING] OpenAI model '%s' requested, but no OPENAI_API_KEY found in config or .env", normalized_model)
+    client = create_openai_client(endpoint, api_key=api_key, is_openai=is_openai_model)
 
     return client, normalized_model, endpoint
 

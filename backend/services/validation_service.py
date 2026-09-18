@@ -3,10 +3,7 @@ import re
 import sqlite3
 from typing import Any, Dict, List, Optional
 
-try:
-    from backend.db.models import SchemaFieldModel
-except ImportError:
-    from src.db.models import SchemaFieldModel
+from backend.db.models import SchemaFieldModel
 
 ISO_DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 

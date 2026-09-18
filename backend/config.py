@@ -72,3 +72,9 @@ def load_config() -> AppConfig:
 def save_config(config: AppConfig) -> None:
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(config.model_dump(), f, indent=2)
+
+def create_openai_client(endpoint: str, api_key: str = "", is_openai: bool = False):
+    import openai
+    base_url = endpoint.rstrip("/")
+    key = api_key or ("missing-key" if is_openai else "lm-studio")
+    return openai.OpenAI(base_url=base_url, api_key=key)

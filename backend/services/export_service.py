@@ -5,16 +5,10 @@ import sqlite3
 import zipfile
 from typing import Any, Dict, List, Tuple
 
-try:
-    from backend.db.hierarchy import format_contextual_breadcrumb_string
-    from backend.db.models import SchemaFieldModel, generate_json_schema_from_fields
-    from backend.services.embedding_service import get_faiss_manager
-    from backend.services.validation_service import validate_project
-except ImportError:
-    from src.db.hierarchy import format_contextual_breadcrumb_string
-    from src.db.models import SchemaFieldModel, generate_json_schema_from_fields
-    from src.services.embedding_service import get_faiss_manager
-    from src.services.validation_service import validate_project
+from backend.db.hierarchy import format_contextual_breadcrumb_string
+from backend.db.models import SchemaFieldModel, generate_json_schema_from_fields
+from backend.services.embedding_service import get_faiss_manager
+from backend.services.validation_service import validate_project
 
 class ValidationGateBlockedError(Exception):
     def __init__(self, validation_result: Dict[str, Any]):

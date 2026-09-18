@@ -3,12 +3,8 @@ import sqlite3
 from typing import Any, Callable, Dict, List, Optional
 from openai import OpenAI
 
-try:
-    from backend.db.hierarchy import format_contextual_breadcrumb_string
-    from backend.db.models import SchemaFieldModel, generate_json_schema_from_fields
-except ImportError:
-    from src.db.hierarchy import format_contextual_breadcrumb_string
-    from src.db.models import SchemaFieldModel, generate_json_schema_from_fields
+from backend.db.hierarchy import format_contextual_breadcrumb_string
+from backend.db.models import SchemaFieldModel, generate_json_schema_from_fields
 
 def get_project_schema_fields(conn: sqlite3.Connection, project_id: str) -> List[SchemaFieldModel]:
     cursor = conn.cursor()

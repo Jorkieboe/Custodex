@@ -8,12 +8,8 @@ try:
 except ImportError:
     RecursiveCharacterTextSplitter = None
 
-try:
-    from backend.db.hierarchy import densify_order_indices, shift_order_indices
-    from backend.db.models import NodeModel, generate_uuid
-except ImportError:
-    from src.db.hierarchy import densify_order_indices, shift_order_indices
-    from src.db.models import NodeModel, generate_uuid
+from backend.db.hierarchy import densify_order_indices, shift_order_indices
+from backend.db.models import NodeModel, generate_uuid
 
 def count_tokens(text: str) -> int:
     if not text or not text.strip():

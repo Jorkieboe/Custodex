@@ -10,43 +10,17 @@ import faiss
 import numpy as np
 import openai
 
-try:
-    from backend.config import get_embedding_endpoint, get_openai_api_key, load_config
-    from backend.db.models import NodeModel
-except ImportError:
-    from src.config import get_embedding_endpoint, get_openai_api_key, load_config
-    from src.db.models import NodeModel
+from backend.config import create_openai_client, get_embedding_endpoint, get_openai_api_key, load_config
+from backend.db.hierarchy import get_node_ancestor_rows
+from backend.db.models import NodeModel
 
 logger = logging.getLogger("custodex.embeddings")
 
 def compile_contextual_payload(conn: sqlite3.Connection, node_id: str) -> str:
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        WITH RECURSIVE ancestor_tree(id, parent_id, node_type, text_content, document_id, depth) AS (
-            SELECT id, parent_id, node_type, text_content, document_id, 0
-            FROM nodes
-            WHERE id = ?
-
-            UNION ALL
-
-            SELECT n.id, n.parent_id, n.node_type, n.text_content, n.document_id, a.depth + 1
-            FROM nodes n
-            JOIN ancestor_tree a ON n.id = a.parent_id
-            WHERE a.depth < 50
-        )
-        SELECT a.node_type, a.text_content, d.filename
-        FROM ancestor_tree a
-        JOIN documents d ON a.document_id = d.id
-        ORDER BY a.depth DESC;
-        """,
-        (node_id,),
-    )
-    rows = cursor.fetchall()
+    doc_filename, rows = get_node_ancestor_rows(conn, node_id)
     if not rows:
         return ""
 
-    doc_filename = rows[0]["filename"]
     headers = []
     chunk_text = ""
 
@@ -143,11 +117,7 @@ def get_embedding_client_for_model(model_name: str) -> Tuple[openai.OpenAI, str,
     if is_openai and not endpoint.strip():
         endpoint = "https://api.openai.com/v1"
 
-    if is_openai:
-        client = openai.OpenAI(base_url=endpoint.rstrip("/"), api_key=api_key or "missing-key")
-    else:
-        client = openai.OpenAI(base_url=endpoint.rstrip("/"), api_key=api_key or "lm-studio")
-
+    client = create_openai_client(endpoint, api_key=api_key, is_openai=is_openai)
     return client, model_name, endpoint
 
 def run_partitioned_embeddings_refresh(

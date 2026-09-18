@@ -58,3 +58,43 @@ export async function replaceAllSchemaFields(
   )
   return resp.data
 }
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}
+
+export function generateJsonSchemaFromFields(fields: SchemaField[]): Record<string, any> {
+  const properties: Record<string, any> = {}
+  const required: string[] = []
+
+  const sorted = [...fields].sort((a, b) => a.order_index - b.order_index)
+
+  for (const field of sorted) {
+    const slug = field.field_slug || `field_${field.id.slice(0, 8)}`
+    const propDef: Record<string, any> = {}
+    if (field.description) propDef.description = field.description
+
+    if (field.field_type === 'string') propDef.type = 'string'
+    else if (field.field_type === 'number') propDef.type = 'number'
+    else if (field.field_type === 'boolean') propDef.type = 'boolean'
+    else if (field.field_type === 'date') { propDef.type = 'string'; propDef.format = 'date' }
+    else if (field.field_type === 'array[string]') { propDef.type = 'array'; propDef.items = { type: 'string' } }
+    else if (field.field_type === 'array[number]') { propDef.type = 'array'; propDef.items = { type: 'number' } }
+
+    properties[slug] = propDef
+    if (field.is_required) required.push(slug)
+  }
+
+  const schema: Record<string, any> = {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    type: 'object',
+    properties,
+    additionalProperties: false
+  }
+  if (required.length > 0) schema.required = required
+  return schema
+}

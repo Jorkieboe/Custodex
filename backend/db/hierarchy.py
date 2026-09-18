@@ -1,7 +1,7 @@
 import sqlite3
 from typing import List, Optional, Tuple
 
-def get_node_hierarchy_breadcrumb(conn: sqlite3.Connection, node_id: str) -> Tuple[str, List[str]]:
+def get_node_ancestor_rows(conn: sqlite3.Connection, node_id: str) -> Tuple[str, List[sqlite3.Row]]:
     query = """
     WITH RECURSIVE ancestors(id, document_id, parent_id, node_type, text_content, depth) AS (
         SELECT id, document_id, parent_id, node_type, text_content, 0
@@ -18,15 +18,17 @@ def get_node_hierarchy_breadcrumb(conn: sqlite3.Connection, node_id: str) -> Tup
     JOIN documents d ON d.id = a.document_id
     ORDER BY a.depth DESC;
     """
-
     cursor = conn.cursor()
     cursor.execute(query, (node_id,))
     rows = cursor.fetchall()
-
     if not rows:
         return ("", [])
+    return (rows[0]["document_title"], rows)
 
-    doc_title = rows[0]["document_title"]
+def get_node_hierarchy_breadcrumb(conn: sqlite3.Connection, node_id: str) -> Tuple[str, List[str]]:
+    doc_title, rows = get_node_ancestor_rows(conn, node_id)
+    if not rows:
+        return ("", [])
     headers = [row["text_content"] for row in rows]
     return (doc_title, headers)
 

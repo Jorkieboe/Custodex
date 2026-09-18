@@ -237,27 +237,6 @@
     "path": "frontend/services/export.ts"
   },
   {
-    "path": "src/components/schema/FieldCard.vue"
-  },
-  {
-    "path": "src/components/schema/SchemaDesigner.vue"
-  },
-  {
-    "path": "src/routers/schema.py"
-  },
-  {
-    "path": "src/services/client.ts"
-  },
-  {
-    "path": "src/services/nodes.ts"
-  },
-  {
-    "path": "src/services/projects.ts"
-  },
-  {
-    "path": "src/services/schema.ts"
-  },
-  {
     "path": "tests/backend/test_metadata_extraction.py"
   },
   {
@@ -274,9 +253,6 @@
   },
   {
     "path": "tests/frontend/export_view.test.ts"
-  },
-  {
-    "path": "src/styles/variables.scss"
   },
   {
     "path": "tests/backend/test_batch_recovery.py"

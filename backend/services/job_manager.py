@@ -4,10 +4,7 @@ import sqlite3
 from typing import AsyncGenerator, Dict, Optional
 from openai import OpenAI
 
-try:
-    from backend.services.metadata_extractor import run_partitioned_metadata_extraction
-except ImportError:
-    from src.services.metadata_extractor import run_partitioned_metadata_extraction
+from backend.services.metadata_extractor import run_partitioned_metadata_extraction
 
 class JobState:
     def __init__(self, project_id: str, job_type: str = "metadata"):
