@@ -30,11 +30,13 @@ button {
   cursor: pointer;
   border: none;
   background: none;
+  border-radius: 0;
 }
 
 input, textarea, select {
   font-family: inherit;
   font-size: inherit;
+  border-radius: 0;
 }
 
 .node-highlight-jump {

@@ -820,7 +820,7 @@ function handleSegmentMouseUp(idx: number) {
 }
 
 .chunk-body {
-  padding: 20px;
+  padding: s20px;
   display: flex;
   flex-direction: column;
 }
@@ -834,7 +834,7 @@ function handleSegmentMouseUp(idx: number) {
   min-height: 24px;
   cursor: text;
   word-break: break-word;
-  padding: 4px 6px;
+  padding: 20px;
   transition: background-color 0.15s ease;
 
   &:focus {

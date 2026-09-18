@@ -386,7 +386,7 @@ async function handleDownload() {
   font-size: 9px;
   font-weight: 700;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: 0;
 
   &.rule-empty_chunk { background-color: rgba(248, 113, 113, 0.2); color: $color-status-missing; }
   &.rule-uncalculated_embedding { background-color: rgba(250, 204, 21, 0.2); color: $color-status-stale; }

@@ -151,7 +151,7 @@ function handleBlur() {
   color: $color-text-secondary;
   background-color: rgba(255, 255, 255, 0.06);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: 0;
 }
 
 .demote-btn {

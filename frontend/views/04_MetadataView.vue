@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useWorkspaceStore } from '../../stores/workspace'
-import { type NodeItem, type SchemaField } from '../../services/api'
-import HeaderOutlineLegend from '../canvas/HeaderOutlineLegend.vue'
+import { useWorkspaceStore } from '@/stores/workspace.ts'
+import { type NodeItem, type SchemaField } from '../services/api'
+import HeaderOutlineLegend from '../components/canvas/HeaderOutlineLegend.vue'
 
 const store = useWorkspaceStore()
 
@@ -372,7 +372,7 @@ const progressPercentage = computed(() => {
 </template>
 
 <style scoped lang="scss">
-@use '../../styles/variables' as *;
+@use '../styles/variables' as *;
 
 .metadata-view-container {
   display: flex;
@@ -484,7 +484,7 @@ const progressPercentage = computed(() => {
   width: 140px;
   height: 8px;
   background-color: rgba(0, 0, 0, 0.4);
-  border-radius: 999px;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -723,7 +723,7 @@ const progressPercentage = computed(() => {
   font-size: 20px;
   font-weight: 600;
   padding: 12px 36px;
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.15s ease;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);

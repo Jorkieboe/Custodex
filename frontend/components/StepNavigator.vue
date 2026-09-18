@@ -112,7 +112,7 @@ const counts = computed(() => store.currentEmbeddingCounts)
   align-items: center;
   gap: 8px;
   padding: 6px 16px;
-  border-radius: 999px;
+  border-radius: 0;
   color: #3b280c;
   background-color: rgba(0, 0, 0, 0.08);
   font-size: 13px;
@@ -152,7 +152,7 @@ const counts = computed(() => store.currentEmbeddingCounts)
   font-size: 10px;
   font-weight: 700;
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: 0;
 
   &.badge-stale {
     background-color: $color-status-stale-bg;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useWorkspaceStore } from '../../stores/workspace'
-import { type FieldType, type SchemaField } from '../../services/api'
+import { useWorkspaceStore } from '../stores/workspace'
+import { type FieldType, type SchemaField } from '../services/api'
 
 const store = useWorkspaceStore()
 
@@ -208,7 +208,7 @@ async function handleToggleRequired(field: SchemaField) {
 </template>
 
 <style scoped lang="scss">
-@use '../../styles/variables' as *;
+@use '../styles/variables' as *;
 
 .schema-designer-wrapper {
   flex: 1;

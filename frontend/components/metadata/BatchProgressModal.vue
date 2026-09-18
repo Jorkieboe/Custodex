@@ -257,7 +257,7 @@ onUnmounted(() => {
 .progress-bar-bg {
   height: 8px;
   background-color: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+  border-radius: 0;
   overflow: hidden;
 }
 

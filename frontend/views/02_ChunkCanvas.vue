@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { type NodeItem } from '../../services/api'
-import { useWorkspaceStore } from '../../stores/workspace'
-import HeaderNodeView from './HeaderNodeView.vue'
-import ChunkNodeView from './ChunkNodeView.vue'
-import HeaderOutlineLegend from './HeaderOutlineLegend.vue'
+import { type NodeItem } from '../services/api.ts'
+import { useWorkspaceStore } from '../stores/workspace.ts'
+import HeaderNodeView from '../components/canvas/HeaderNodeView.vue'
+import ChunkNodeView from '../components/canvas/ChunkNodeView.vue'
+import HeaderOutlineLegend from '../components/canvas/HeaderOutlineLegend.vue'
 
 const store = useWorkspaceStore()
 
@@ -270,7 +270,7 @@ function canMerge(index: number): boolean {
 </template>
 
 <style scoped lang="scss">
-@use '../../styles/variables' as *;
+@use '../styles/variables' as *;
 
 .chunk-canvas-wrapper {
   display: flex;

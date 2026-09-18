@@ -138,16 +138,10 @@
     "path": "frontend/stores/workspace.ts"
   },
   {
-    "path": "frontend/components/canvas/ChunkCanvas.vue"
-  },
-  {
     "path": "frontend/components/canvas/ChunkNodeView.vue"
   },
   {
     "path": "frontend/components/canvas/HeaderNodeView.vue"
-  },
-  {
-    "path": "frontend/components/IngestionView.vue"
   },
   {
     "path": "frontend/components/ProjectHub.vue"
@@ -184,12 +178,6 @@
   },
   {
     "path": "frontend/services/schema.ts"
-  },
-  {
-    "path": "frontend/components/schema/SchemaDesigner.vue"
-  },
-  {
-    "path": "frontend/components/metadata/MetadataView.vue"
   },
   {
     "path": "tests/frontend/metadata.test.ts"
@@ -283,9 +271,6 @@
   },
   {
     "path": "tests/frontend/schema.test.ts"
-  },
-  {
-    "path": "frontend/components/export/ExportView.vue"
   },
   {
     "path": "tests/frontend/export_view.test.ts"

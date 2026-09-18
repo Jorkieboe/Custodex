@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useWorkspaceStore } from '../../stores/workspace'
-import { type ValidationBlocker, type SchemaField, fetchProjectSchema } from '../../services/api'
+import { type ValidationBlocker, type SchemaField, fetchProjectSchema } from '../services/api'
+import { useWorkspaceStore } from '@/stores/workspace'
 
 const store = useWorkspaceStore()
 const activeTab = ref<'manifest' | 'metadata' | 'schema'>('manifest')
@@ -305,7 +305,7 @@ const compiledSchemaPreview = computed(() => {
 </template>
 
 <style scoped lang="scss">
-@use '../../styles/variables' as *;
+@use '../styles/variables' as *;
 
 .export-screen {
   display: flex;
@@ -546,7 +546,7 @@ const compiledSchemaPreview = computed(() => {
   font-size: 9px;
   font-weight: 700;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: 0;
 
   &.rule-empty_chunk { background-color: rgba(239, 68, 68, 0.2); color: $color-status-missing; }
   &.rule-uncalculated_embedding { background-color: rgba(234, 179, 8, 0.2); color: $color-status-stale; }
