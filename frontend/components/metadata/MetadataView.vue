@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useWorkspaceStore } from '../../stores/workspace'
 import { type NodeItem, type SchemaField } from '../../services/api'
+import HeaderOutlineLegend from '../canvas/HeaderOutlineLegend.vue'
 
 const store = useWorkspaceStore()
 
@@ -46,22 +47,6 @@ const groupedByHeaders = computed(() => {
   }
 
   return groups
-})
-
-const documentPalette: string[] = [
-  '#fecdd3', // soft pink
-  '#d1fae5', // soft emerald
-  '#dbeafe', // soft blue
-  '#fef3c7', // soft amber
-  '#e0e7ff'  // soft indigo
-]
-
-const documentColorMap = computed(() => {
-  const map: Record<string, string> = {}
-  store.documents.forEach((doc, idx) => {
-    map[doc.id] = documentPalette[idx % documentPalette.length]
-  })
-  return map
 })
 
 onMounted(async () => {
@@ -203,104 +188,79 @@ const progressPercentage = computed(() => {
       </button>
     </div>
 
-    <!-- Main 2-Column Display -->
+    <!-- Main 3-Column Display: 20% headeroutline, 60% chunks, 20% metadata input -->
     <main class="metadata-main">
-      <!-- Left Column: Document Tree + Chunks -->
-      <section class="left-column">
-        <!-- Far-Left Document Tree Sidebar (from mockup) -->
-        <aside class="hierarchy-sidebar">
-          <div class="sidebar-title">Structure</div>
-          <div class="sidebar-tree">
-            <div
-              v-for="doc in store.documents"
-              :key="doc.id"
-              class="tree-doc-group"
+      <!-- Column 1: Header Outline (20%) -->
+      <HeaderOutlineLegend />
+
+      <!-- Column 2: Chunks (60%) -->
+      <div class="chunks-scroll-area canvas-scroll-container">
+        <div v-if="paragraphNodes.length === 0" class="empty-chunks">
+          No text chunks available. Ingest documents to populate content.
+        </div>
+
+        <div v-else class="grouped-chunks-list">
+          <div
+            v-for="(group, gIdx) in groupedByHeaders"
+            :key="gIdx"
+            class="chunk-group"
+          >
+            <h3
+              v-if="group.header"
+              :id="`node-${group.header.id}`"
+              :data-node-id="group.header.id"
+              class="group-header-title"
             >
+              {{ group.header.text_content }}
+            </h3>
+
+            <div class="group-items">
               <div
-                class="tree-pill doc-pill"
-                :style="{ backgroundColor: documentColorMap[doc.id] || '#dbeafe' }"
-                :title="doc.filename"
+                v-for="chunk in group.chunks"
+                :key="chunk.id"
+                :id="`node-${chunk.id}`"
+                :data-node-id="chunk.id"
+                class="chunk-card"
+                :class="{
+                  active: store.activeNodeId === chunk.id,
+                  'has-metadata': store.nodesWithMetadata.has(chunk.id)
+                }"
+                @click="handleSelectChunk(chunk.id)"
               >
-                ^ {{ doc.filename.length > 14 ? doc.filename.slice(0, 14) + '...' : doc.filename }}
-              </div>
-
-              <div class="header-nodes-sublist">
-                <div
-                  v-for="node in store.nodes.filter(n => n.document_id === doc.id && n.node_type === 'header')"
-                  :key="node.id"
-                  class="tree-pill header-pill"
-                  :style="{ backgroundColor: documentColorMap[doc.id] || '#dbeafe' }"
-                  :title="node.text_content"
-                >
-                  {{ node.text_content.length > 16 ? node.text_content.slice(0, 16) + '...' : node.text_content }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <!-- Chunks Canvas (Left/Center) -->
-        <div class="chunks-scroll-area">
-          <div v-if="paragraphNodes.length === 0" class="empty-chunks">
-            No text chunks available. Ingest documents to populate content.
-          </div>
-
-          <div v-else class="grouped-chunks-list">
-            <div
-              v-for="(group, gIdx) in groupedByHeaders"
-              :key="gIdx"
-              class="chunk-group"
-            >
-              <h3 v-if="group.header" class="group-header-title">
-                {{ group.header.text_content }}
-              </h3>
-
-              <div class="group-items">
-                <div
-                  v-for="chunk in group.chunks"
-                  :key="chunk.id"
-                  class="chunk-card"
-                  :class="{
-                    active: store.activeNodeId === chunk.id,
-                    'has-metadata': store.nodesWithMetadata.has(chunk.id)
-                  }"
-                  @click="handleSelectChunk(chunk.id)"
-                >
-                  <div class="chunk-card-meta">
-                    <span class="chunk-index">#{{ chunk.order_index }}</span>
-                    <span
-                      v-if="store.nodesWithMetadata.has(chunk.id)"
-                      class="badge-has-meta"
-                    >
-                      ✓ Extracted
-                    </span>
-                  </div>
-
-                  <p class="chunk-text">
-                    {{ chunk.text_content }}
-                  </p>
-
-                  <!-- Left-part Generate button if chunk has no metadata yet -->
-                  <div
-                    v-if="!store.nodesWithMetadata.has(chunk.id)"
-                    class="chunk-generate-action"
+                <div class="chunk-card-meta">
+                  <span class="chunk-index">#{{ chunk.order_index }}</span>
+                  <span
+                    v-if="store.nodesWithMetadata.has(chunk.id)"
+                    class="badge-has-meta"
                   >
-                    <button
-                      class="btn-chunk-generate"
-                      :disabled="store.isGeneratingSingle === chunk.id"
-                      @click.stop="handleGenerateForChunk(chunk.id)"
-                    >
-                      {{ store.isGeneratingSingle === chunk.id ? 'Generating...' : 'Generate' }}
-                    </button>
-                  </div>
+                    ✓ Extracted
+                  </span>
+                </div>
+
+                <p class="chunk-text">
+                  {{ chunk.text_content }}
+                </p>
+
+                <!-- Left-part Generate button if chunk has no metadata yet -->
+                <div
+                  v-if="!store.nodesWithMetadata.has(chunk.id)"
+                  class="chunk-generate-action"
+                >
+                  <button
+                    class="btn-chunk-generate"
+                    :disabled="store.isGeneratingSingle === chunk.id"
+                    @click.stop="handleGenerateForChunk(chunk.id)"
+                  >
+                    {{ store.isGeneratingSingle === chunk.id ? 'Generating...' : 'Generate' }}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- Right Column: Metadata Form -->
+      <!-- Column 3: Metadata Form (20%) -->
       <section class="right-column">
         <div v-if="!activeNode" class="no-selection-card">
           <p>Select a chunk on the left to inspect and edit its metadata.</p>
@@ -600,78 +560,21 @@ const progressPercentage = computed(() => {
 
 .metadata-main {
   flex: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: 20% 60% 20%;
   overflow: hidden;
-}
 
-.left-column {
-  flex: 1.2;
-  display: flex;
-  border-right: 1px solid $color-border;
-  overflow: hidden;
-}
-
-.hierarchy-sidebar {
-  width: 140px;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  background-color: rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  padding: 12px 8px;
-  overflow-y: auto;
-}
-
-.sidebar-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: $color-text-muted;
-  margin-bottom: 8px;
-  padding-left: 4px;
-}
-
-.sidebar-tree {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.tree-doc-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.tree-pill {
-  font-size: 11px;
-  color: #1e293b;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: $radius-sm;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: default;
-  user-select: none;
-}
-
-.header-nodes-sublist {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding-left: 8px;
-
-  .header-pill {
-    opacity: 0.85;
-    font-size: 10px;
-    font-weight: 500;
+  > :first-child {
+    min-width: 0;
+    overflow-y: auto;
   }
 }
 
 .chunks-scroll-area {
-  flex: 1;
+  min-width: 0;
   padding: 24px;
   overflow-y: auto;
+  border-right: 1px solid $color-border;
 }
 
 .empty-chunks {
@@ -782,9 +685,9 @@ const progressPercentage = computed(() => {
 }
 
 .right-column {
-  flex: 0.9;
+  min-width: 0;
   background-color: rgba(0, 0, 0, 0.1);
-  padding: 32px;
+  padding: 24px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

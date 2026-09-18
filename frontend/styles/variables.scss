@@ -1,25 +1,37 @@
-// Primary Brand & Accents (Emerald Green)
-$color-primary: #10b981;
-$color-primary-hover: #059669;
-$color-primary-light: #34d399;
-$color-primary-glow: rgba(16, 185, 129, 0.2);
+// Primary Brand & Accents (Warm Gold / Navigation Bar)
+$color-primary: #E8A643;
+$color-primary-hover: #d6932f;
+$color-primary-dark: #c48220;
+$color-primary-light: #f3c276;
+$color-primary-glow: rgba(232, 166, 67, 0.25);
 
-// Backgrounds & Surfaces (Deep Forest / Moss Green Tint)
-$color-bg: #0b130e;
-$color-surface: #111d16;
-$color-surface-hover: #182a20;
-$color-surface-active: #1e3528;
-$color-border: #1f382a;
-$color-border-subtle: rgba(16, 185, 129, 0.08);
+// Navigation Bar
+$color-navbar-bg: #d6932f;
+$color-navbar-border: #b87b1e;
 
-// Typography (Mint & Sage Tints)
-$color-text-primary: #e6f5ec;
-$color-text-secondary: #98b6a3;
-$color-text-muted: #61806d;
+// Secondary Color & Nodes (434BE8 at 20% Opacity)
+$color-secondary: #434BE8;
+$color-secondary-hover: #353ec9;
+$color-secondary-node: rgba(67, 75, 232, 0.2);
+$color-node-bg: rgba(67, 75, 232, 0.2);
+$color-node-border: rgba(67, 75, 232, 0.35);
+
+// Backgrounds & Surfaces
+$color-bg: #ffffff;
+$color-surface: #ffffff;
+$color-surface-hover: #f8fafc;
+$color-surface-active: #f1f5f9;
+$color-border: #e2e8f0;
+$color-border-subtle: rgba(67, 75, 232, 0.1);
+
+// Typography
+$color-text-primary: #0f172a;
+$color-text-secondary: #475569;
+$color-text-muted: #64748b;
 
 // Status Colors
-$color-status-current: #22c55e;
-$color-status-current-bg: rgba(34, 197, 94, 0.15);
+$color-status-current: #16a34a;
+$color-status-current-bg: rgba(22, 163, 74, 0.15);
 $color-status-stale: #eab308;
 $color-status-stale-bg: rgba(234, 179, 8, 0.15);
 $color-status-missing: #ef4444;

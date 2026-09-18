@@ -54,7 +54,11 @@ function handleBlur() {
 </script>
 
 <template>
-  <div class="header-node-container">
+  <div
+    :id="`node-${node.id}`"
+    :data-node-id="node.id"
+    class="header-node-container"
+  >
     <div class="header-bar">
       <div class="header-left">
         <span class="heading-tag">HEADER</span>
@@ -95,7 +99,7 @@ function handleBlur() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: rgba(56, 189, 248, 0.08);
+  background-color: rgba(232, 166, 67, 0.12);
   border-left: 4px solid $color-primary;
   border-radius: $radius-sm;
   padding: 8px 14px;
@@ -111,9 +115,9 @@ function handleBlur() {
 .heading-tag {
   font-size: 10px;
   font-weight: 800;
-  color: $color-primary;
+  color: #b87518;
   letter-spacing: 0.06em;
-  background-color: rgba(56, 189, 248, 0.15);
+  background-color: rgba(232, 166, 67, 0.22);
   padding: 2px 6px;
   border-radius: $radius-sm;
   user-select: none;

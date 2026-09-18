@@ -328,81 +328,90 @@ function handleSegmentMouseUp(idx: number) {
 
 <template>
   <div
+    :id="`node-${node.id}`"
+    :data-node-id="node.id"
     ref="chunkRef"
-    class="chunk-node-container"
-    :class="{ selected: isSelected }"
+    class="chunk-row-wrapper"
     @contextmenu="handleContextMenu"
   >
-    <div class="chunk-header">
-      <div class="chunk-meta">
-        <input
-          type="checkbox"
-          class="chunk-checkbox"
-          :checked="isSelected"
-          @change="store.toggleNodeSelection(node.id)"
-        />
-        <span class="order-badge">#{{ node.order_index }}</span>
-        <span class="tokens-badge" title="Estimated token size of this chunk">~{{ estimatedTokens }} tok</span>
+    <!-- Selection checkbox placed outside the chunk container -->
+    <div class="chunk-outside-selection">
+      <input
+        type="checkbox"
+        class="chunk-outside-checkbox"
+        :checked="isSelected"
+        @change="store.toggleNodeSelection(node.id)"
+      />
+    </div>
 
-        <span
-          v-if="showEmbeddingStatus"
-          class="status-pill"
-          :class="`status-${node.embedding_status}`"
-        >
-          <span class="status-dot"></span>
-          {{ node.embedding_status.toUpperCase() }}
-        </span>
-      </div>
-
-      <div class="chunk-tools" v-if="store.currentStep == 'chunks'">
+    <div
+      class="chunk-node-container"
+      :class="{ selected: isSelected }"
+    >
+      <!-- Absolute action buttons toolbar on the node -->
+      <div class="chunk-actions-absolute" v-if="store.currentStep === 'chunks'">
         <button
-          class="btn-tool btn-autosplit"
-          :disabled="isAnalyzing"
-          @click="handleTriggerAutoSplit"
-          title="Analyze chunk for semantic shifts and suggest split points"
+          class="btn-action-pill"
+          @click="emit('promote', node.id)"
+          title="Promote paragraph to structural header"
         >
-          {{ isAnalyzing ? 'Analyzing...' : '⚡ Auto-Split' }}
+          Promote to Header ↥
         </button>
         <button
           v-if="canMerge"
-          class="btn-tool"
+          class="btn-action-pill"
           @click="emit('merge', node.id)"
           title="Merge with succeeding chunk"
         >
           Merge Down ⤓
         </button>
         <button
-          class="btn-tool"
-          @click="emit('promote', node.id)"
-          title="Promote paragraph to structural header"
+          class="btn-action-pill btn-autosplit-pill"
+          :disabled="isAnalyzing"
+          @click="handleTriggerAutoSplit"
+          title="Analyze chunk for semantic shifts and suggest split points"
         >
-          Promote to Header ↥
+          {{ isAnalyzing ? 'Analyzing...' : '⚡ Auto-Split' }}
         </button>
       </div>
-    </div>
 
-    <!-- Feedback banner when no splits found -->
-    <div v-if="noSplitsNotice" class="no-splits-banner">
-      <span>ℹ️ No semantic breaks detected (chunk is already compact or uniform in topic).</span>
-    </div>
-
-    <!-- Active Proposal Review Banner -->
-    <div v-if="activeProposal" class="semantic-split-proposal-banner">
-      <div class="proposal-info">
-        <span class="proposal-badge">⚡ {{ activeProposal.proposed_splits.length }} Proposed Split(s)</span>
-        <span class="proposal-tutorial">Suggested split — double Enter splits chunks like this</span>
+      <!-- Token count visible only on hover -->
+      <div class="chunk-hover-token-badge">
+        {{ estimatedTokens }} tokens
       </div>
-      <div class="proposal-banner-actions">
-        <button class="btn-proposal-accept" @click="store.acceptProposedSplit(node.id)">
-          ✓ Accept All
-        </button>
-        <button class="btn-proposal-reject" @click="store.rejectProposedSplit(node.id)">
-          ✕ Reject
-        </button>
-      </div>
-    </div>
 
-    <div class="chunk-body">
+      <!-- Embedding status pill if in embeddings view -->
+      <span
+        v-if="showEmbeddingStatus"
+        class="status-pill status-pill-absolute"
+        :class="`status-${node.embedding_status}`"
+      >
+        <span class="status-dot"></span>
+        {{ node.embedding_status.toUpperCase() }}
+      </span>
+
+      <!-- Feedback banner when no splits found -->
+      <div v-if="noSplitsNotice" class="no-splits-banner">
+        <span>ℹ️ No semantic breaks detected (chunk is already compact or uniform in topic).</span>
+      </div>
+
+      <!-- Active Proposal Review Banner -->
+      <div v-if="activeProposal" class="semantic-split-proposal-banner">
+        <div class="proposal-info">
+          <span class="proposal-badge">⚡ {{ activeProposal.proposed_splits.length }} Proposed Split(s)</span>
+          <span class="proposal-tutorial">Suggested split — double Enter splits chunks like this</span>
+        </div>
+        <div class="proposal-banner-actions">
+          <button class="btn-proposal-accept" @click="store.acceptProposedSplit(node.id)">
+            ✓ Accept All
+          </button>
+          <button class="btn-proposal-reject" @click="store.rejectProposedSplit(node.id)">
+            ✕ Reject
+          </button>
+        </div>
+      </div>
+
+      <div class="chunk-body">
 
       <template v-if="activeProposal && activeProposal.proposed_splits.length > 0">
         <div class="proposed-review-container">
@@ -461,11 +470,12 @@ function handleSegmentMouseUp(idx: number) {
         >
           <div class="divider-line"></div>
           <div class="split-button-wrapper">
-            <button class="split-pill-btn" type="button">✂ Split Chunk Here</button>
+            <button class="split-pill-btn" type="button">split</button>
           </div>
         </div>
       </template>
 
+      </div>
     </div>
 
     <div
@@ -494,61 +504,129 @@ function handleSegmentMouseUp(idx: number) {
 <style scoped lang="scss">
 @use '../../styles/variables' as *;
 
-.chunk-node-container {
-  background-color: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
-  margin-bottom: 12px;
+.chunk-row-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
   position: relative;
-  transition: all 0.15s ease;
+}
+
+.chunk-outside-selection {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  align-self: center;
+
+  width: fit-content;
+
+  // input{
+  //   justify-content: center;
+  //   align-items: center;
+  // }
+  
+}
+
+.chunk-outside-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #E8A643;
+  border: 1px solid #94a3b8;
+}
+
+.chunk-node-container {
+  flex: 1;
+  background-color: rgba(67, 75, 232, 0.2);
+  position: relative;
+  transition: all 10.15s ease;
+  border: 1px solid transparent;
 
   &:hover {
-    border-color: rgba(56, 189, 248, 0.4);
+    border-color: rgba(67, 75, 232, 0.4);
+
+    .chunk-hover-token-badge {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .chunk-actions-absolute {
+      opacity: 1;
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+    }
   }
 
   &.selected {
-    border-color: $color-primary;
-    background-color: rgba(56, 189, 248, 0.03);
+    border-color: #434BE8;
+    box-shadow: 0 0 0 2px rgba(67, 75, 232, 0.3);
   }
 }
 
-.chunk-header {
+.chunk-actions-absolute {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translate(-50%, 6px);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  user-select: none;
+  gap: 4px;
+  z-index: 20;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.0s cubic-bezier(0.16, 1, 0.3, 1), transform 1.0s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.chunk-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chunk-checkbox {
-  cursor: pointer;
-  accent-color: $color-primary;
-}
-
-.order-badge {
-  font-family: $font-family-mono;
+.btn-action-pill {
+  background-color: #E8A643;
+  color: #ffffff;
+  border: 1px solid #d6932f;
   font-size: 11px;
-  color: $color-text-muted;
-  background-color: rgba(0, 0, 0, 0.25);
-  padding: 1px 6px;
-  border-radius: $radius-sm;
+  font-weight: 600;
+  padding: 2px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.25s ease;
+
+  &:hover {
+    background-color: #d6932f;
+    color: #ffffff;
+  }
+
+  &.btn-autosplit-pill {
+    background-color: #E8A643;
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
 }
 
-.tokens-badge {
+.chunk-hover-token-badge {
+  position: absolute;
+  top: 5px;
+  right: 12px;
   font-family: $font-family-mono;
   font-size: 10px;
   font-weight: 600;
-  color: $color-primary;
-  background-color: rgba(56, 189, 248, 0.1);
-  padding: 1px 5px;
-  border-radius: $radius-sm;
+  color: #64748b;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e2e8f0;
+  padding: 1px 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+}
+
+.status-pill-absolute {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 15;
 }
 
 .status-pill {
@@ -585,40 +663,6 @@ function handleSegmentMouseUp(idx: number) {
   }
 }
 
-.chunk-tools {
-  display: flex;
-  gap: 6px;
-}
-
-.btn-tool {
-  font-size: 11px;
-  color: $color-text-secondary;
-  background-color: transparent;
-  padding: 2px 6px;
-  border-radius: $radius-sm;
-
-  &:hover {
-    color: $color-text-primary;
-    background-color: $color-surface-hover;
-  }
-
-  &.btn-autosplit {
-    color: $color-primary;
-    background-color: rgba(56, 189, 248, 0.1);
-    font-weight: 600;
-
-    &:hover:not(:disabled) {
-      background-color: $color-primary;
-      color: #000;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-}
-
 .no-splits-banner {
   background-color: rgba(234, 179, 8, 0.1);
   border-bottom: 1px solid rgba(234, 179, 8, 0.25);
@@ -648,7 +692,6 @@ function handleSegmentMouseUp(idx: number) {
   background-color: $color-primary;
   color: #000;
   padding: 2px 6px;
-  border-radius: $radius-sm;
 }
 
 .proposal-tutorial {
@@ -667,7 +710,6 @@ function handleSegmentMouseUp(idx: number) {
   font-size: 11px;
   font-weight: 600;
   padding: 3px 8px;
-  border-radius: $radius-sm;
   cursor: pointer;
 }
 
@@ -676,7 +718,6 @@ function handleSegmentMouseUp(idx: number) {
   color: $color-text-secondary;
   font-size: 11px;
   padding: 3px 6px;
-  border-radius: $radius-sm;
   cursor: pointer;
 
   &:hover {
@@ -702,7 +743,6 @@ function handleSegmentMouseUp(idx: number) {
 .candidate-slice-card {
   background-color: rgba(0, 0, 0, 0.25);
   border: 1px dashed rgba(56, 189, 248, 0.3);
-  border-radius: $radius-sm;
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -729,7 +769,6 @@ function handleSegmentMouseUp(idx: number) {
   color: #22c55e;
   background-color: rgba(34, 197, 94, 0.1);
   padding: 1px 5px;
-  border-radius: $radius-sm;
 }
 
 .candidate-slice-text {
@@ -781,7 +820,7 @@ function handleSegmentMouseUp(idx: number) {
 }
 
 .chunk-body {
-  padding: 12px 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
 }
@@ -789,18 +828,17 @@ function handleSegmentMouseUp(idx: number) {
 .chunk-editable-content {
   font-size: 14px;
   line-height: 1.6;
-  color: $color-text-primary;
+  color: #1e293b;
   white-space: pre-wrap;
   outline: none;
   min-height: 24px;
   cursor: text;
   word-break: break-word;
   padding: 4px 6px;
-  border-radius: $radius-sm;
   transition: background-color 0.15s ease;
 
   &:focus {
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(255, 255, 255, 0.4);
   }
 }
 
@@ -817,33 +855,38 @@ function handleSegmentMouseUp(idx: number) {
   .divider-line {
     width: 100%;
     height: 1px;
-    border-top: 1px dashed $color-border;
+    background: repeating-linear-gradient(
+      to right,
+      black 0,
+      black 4px,
+      transparent 4px,
+      transparent 10px
+    );
   }
 
   .split-pill-btn {
-    background-color: $color-surface;
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    color: $color-primary;
+    background-color: #E8A643;
+    border: 1px solid #d6932f;
+    color: #ffffff;
     font-size: 11px;
-    font-weight: 600;
-    padding: 3px 12px;
+    font-weight: 700;
+    padding: 3px 14px;
     border-radius: 999px;
-    opacity: 0.5;
+    opacity: 0.9;
     transition: all 0.15s ease;
     cursor: pointer;
     margin-right: 1rem;
 
-    &:hover{
+    &:hover {
       opacity: 1;
       transform: scale(1.05);
-      background-color: $color-primary;
-      color: #000;
-      border-color: $color-primary;
+      background-color: #d6932f;
+      color: #ffffff;
     }
 
     &:has(.split-pill-btn:hover) {
       .divider-line {
-        border-top-color: $color-primary;
+        border-top-color: #E8A643;
       }
     }
   }
@@ -859,7 +902,6 @@ function handleSegmentMouseUp(idx: number) {
   position: fixed;
   background-color: $color-surface;
   border: 1px solid $color-border;
-  border-radius: $radius-md;
   box-shadow: $shadow-modal;
   display: flex;
   flex-direction: column;

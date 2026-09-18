@@ -2,7 +2,7 @@
   "project_name": "Custodex",
   "project_color": "#0D9488",
   "project_font_color": "light",
-  "active_profile": "default",
+  "active_profile": "no-todo",
   "known_files": [
     "README.md",
     "architecture.md",
@@ -46,6 +46,7 @@
     "frontend/components/canvas/ChunkCanvas.vue",
     "frontend/components/canvas/ChunkNodeView.vue",
     "frontend/components/canvas/HeaderNodeView.vue",
+    "frontend/components/canvas/HeaderOutlineLegend.vue",
     "frontend/components/export/ExportGateModal.vue",
     "frontend/components/export/ExportView.vue",
     "frontend/components/metadata/BatchProgressModal.vue",

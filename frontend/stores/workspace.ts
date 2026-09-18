@@ -274,6 +274,26 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     await reloadDocuments()
   }
 
+  function scrollToNode(nodeId: string) {
+    selectNode(nodeId)
+    const el = document.getElementById(`node-${nodeId}`) ||
+               document.querySelector(`[data-node-id="${nodeId}"]`) ||
+               document.querySelector(`[data-id="${nodeId}"]`)
+    if (el) {
+      const container = (el.closest('.canvas-scroll-container') || el.closest('.chunks-scroll-area')) as HTMLElement | null
+      if (container) {
+        const cRect = container.getBoundingClientRect()
+        const elRect = el.getBoundingClientRect()
+        const targetScrollTop = container.scrollTop + (elRect.top - cRect.top) - 24
+        container.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' })
+      } else {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      el.classList.add('node-highlight-jump')
+      setTimeout(() => el.classList.remove('node-highlight-jump'), 1500)
+    }
+  }
+
   return {
     currentProject,
     documents,
@@ -298,6 +318,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     demoteNode,
     detachSelection,
     reloadNodes,
+    scrollToNode,
     schemaFields,
     reloadSchema,
     addSchemaField,

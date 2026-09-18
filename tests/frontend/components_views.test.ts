@@ -5,6 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspace'
 import FieldCard from '@/components/schema/FieldCard.vue'
 import ExportGateModal from '@/components/export/ExportGateModal.vue'
 import BatchProgressModal from '@/components/metadata/BatchProgressModal.vue'
+import HeaderOutlineLegend from '@/components/canvas/HeaderOutlineLegend.vue'
 
 describe('Frontend Components and Modal Views', () => {
   let pinia: ReturnType<typeof createPinia>
@@ -120,6 +121,130 @@ describe('Frontend Components and Modal Views', () => {
     expect(container.innerHTML).toContain('Extraction stopped due to an error')
     expect(container.innerHTML).toContain('LM Studio endpoint timed out')
     expect(container.innerHTML).toContain('Resume Extraction')
+    app.unmount()
+  })
+
+  it('mounts HeaderOutlineLegend and renders distinct color palettes per book', () => {
+    const store = useWorkspaceStore()
+    store.documents = [
+      {
+        id: 'doc_1',
+        project_id: 'p1',
+        filename: 'document 1',
+        file_type: 'docx',
+        order_index: 0,
+        total_nodes: 3,
+        current_embeddings: 0,
+        stale_embeddings: 0,
+        missing_embeddings: 0
+      },
+      {
+        id: 'doc_2',
+        project_id: 'p1',
+        filename: 'document 2',
+        file_type: 'docx',
+        order_index: 1,
+        total_nodes: 2,
+        current_embeddings: 0,
+        stale_embeddings: 0,
+        missing_embeddings: 0
+      }
+    ]
+    store.nodes = [
+      {
+        id: 'h1_doc1',
+        document_id: 'doc_1',
+        parent_id: null,
+        node_type: 'header',
+        text_content: 'Header 1',
+        order_index: 0,
+        embedding_status: 'current'
+      },
+      {
+        id: 'sub1_doc1',
+        document_id: 'doc_1',
+        parent_id: 'h1_doc1',
+        node_type: 'header',
+        text_content: 'Sub-header 1',
+        order_index: 1,
+        embedding_status: 'current'
+      },
+      {
+        id: 'h1_doc2',
+        document_id: 'doc_2',
+        parent_id: null,
+        node_type: 'header',
+        text_content: 'Header 1 Doc2',
+        order_index: 0,
+        embedding_status: 'current'
+      }
+    ]
+
+    const container = document.createElement('div')
+    const app = createApp({
+      render() {
+        return h(HeaderOutlineLegend)
+      }
+    })
+    app.use(pinia)
+    app.mount(container)
+
+    expect(container.innerHTML).toContain('document 1')
+    expect(container.innerHTML).toContain('document 2')
+    expect(container.innerHTML).toContain('Header 1')
+    expect(container.innerHTML).toContain('Sub-header 1')
+    expect(container.innerHTML).toContain('Header 1 Doc2')
+
+    // Document 1 uses first palette (pink #ffe4e6), Document 2 uses second palette (sage #dcfce7)
+    expect(container.innerHTML).toContain('#ffe4e6')
+    expect(container.innerHTML).toContain('#dcfce7')
+
+    app.unmount()
+  })
+
+  it('triggers scrollToNode when clicking on a header in HeaderOutlineLegend', async () => {
+    const store = useWorkspaceStore()
+    store.documents = [
+      {
+        id: 'doc_1',
+        project_id: 'p1',
+        filename: 'document 1',
+        file_type: 'docx',
+        order_index: 0,
+        total_nodes: 1,
+        current_embeddings: 0,
+        stale_embeddings: 0,
+        missing_embeddings: 0
+      }
+    ]
+    store.nodes = [
+      {
+        id: 'target_h1',
+        document_id: 'doc_1',
+        parent_id: null,
+        node_type: 'header',
+        text_content: 'Target Header',
+        order_index: 0,
+        embedding_status: 'current'
+      }
+    ]
+
+    const scrollSpy = vi.spyOn(store, 'scrollToNode')
+
+    const container = document.createElement('div')
+    const app = createApp({
+      render() {
+        return h(HeaderOutlineLegend)
+      }
+    })
+    app.use(pinia)
+    app.mount(container)
+
+    const headerItem = container.querySelector('.legend-h1-item') as HTMLElement
+    expect(headerItem).not.toBeNull()
+    headerItem.click()
+
+    expect(scrollSpy).toHaveBeenCalledWith('target_h1')
     app.unmount()
   })
 })

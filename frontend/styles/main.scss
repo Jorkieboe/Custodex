@@ -36,3 +36,21 @@ input, textarea, select {
   font-family: inherit;
   font-size: inherit;
 }
+
+.node-highlight-jump {
+  animation: pulse-jump-highlight 1.5s ease-out;
+}
+
+@keyframes pulse-jump-highlight {
+  0% {
+    box-shadow: 0 0 0 4px rgba(232, 166, 67, 0.6);
+    filter: brightness(1.08);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(232, 166, 67, 0.25);
+  }
+  100% {
+    box-shadow: none;
+    filter: none;
+  }
+}

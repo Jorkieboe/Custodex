@@ -33,64 +33,61 @@ async function handleDrop(event: DragEvent) {
       <p class="desc">Import DOCX, PDF, Markdown, or TXT documents. Hierarchies and nodes are preserved with persistent UUIDs.</p>
     </div>
 
-    <div
-      class="dropzone"
-      :class="{ dragging: isDragging }"
-      @dragover.prevent="isDragging = true"
-      @dragleave.prevent="isDragging = false"
-      @drop.prevent="handleDrop"
-      @click="triggerFileInput"
-    >
-      <input
-        ref="fileInput"
-        type="file"
-        multiple
-        accept=".docx,.pdf,.md,.markdown,.txt"
-        style="display: none"
-        @change="handleFileSelect"
-      />
-      <div class="dropzone-content">
-        <span class="drop-icon">📄</span>
-        <p class="drop-title">Click or drag documents here to import</p>
-        <span class="drop-hint">Supported: .docx (heading tree), .pdf, .md, .txt</span>
+    <div class="content">
+      <div class="drop-section">
+      <div
+        class="dropzone"
+        :class="{ dragging: isDragging }"
+        @dragover.prevent="isDragging = true"
+        @dragleave.prevent="isDragging = false"
+        @drop.prevent="handleDrop"
+        @click="triggerFileInput"
+      >
+        <input
+          ref="fileInput"
+          type="file"
+          multiple
+          accept=".docx,.pdf,.md,.markdown,.txt"
+          style="display: none"
+          @change="handleFileSelect"
+        />
+        <div class="dropzone-content">
+          <span class="drop-icon">📄</span>
+          <p class="drop-title">Click or drag documents here to import</p>
+          <span class="drop-hint">Supported: .docx (heading tree), .pdf, .md, .txt</span>
+        </div>
       </div>
-    </div>
-
-    <div class="documents-section">
-      <h3>Imported Documents ({{ store.documents.length }})</h3>
-
-      <div v-if="store.documents.length === 0" class="empty-docs">
-        No documents imported yet. Drag in a document to get started.
       </div>
 
-      <div v-else class="doc-list">
-        <div
-          v-for="doc in store.documents"
-          :key="doc.id"
-          class="doc-card"
-        >
-          <div class="doc-main">
-            <span class="format-badge">{{ doc.file_type.toUpperCase() }}</span>
-            <div class="doc-meta">
-              <h4>{{ doc.filename }}</h4>
-              <span class="doc-counts">{{ doc.total_nodes }} structural nodes</span>
+      <div class="documents-section">
+
+        <div v-if="store.documents.length === 0" class="empty-docs">
+          No documents imported yet. Drag in a document to get started.
+        </div>
+
+        <div v-else class="doc-list">
+          <div
+            v-for="doc in store.documents"
+            :key="doc.id"
+            class="doc-card"
+          >
+            <div class="doc-main">
+              <span class="format-badge">{{ doc.file_type.toUpperCase() }}</span>
+              <div class="doc-meta">
+                <h4>{{ doc.filename }}</h4>
+                <span class="doc-counts">{{ doc.total_nodes }} structural nodes</span>
+              </div>
             </div>
-          </div>
 
-          <div class="doc-actions">
-            <button
-              class="btn btn-sm btn-action"
-              @click.stop="store.setStep('chunks')"
-            >
-              Open in Canvas
-            </button>
-            <button
-              class="btn btn-sm btn-danger"
-              @click.stop="store.removeDocument(doc.id)"
-              title="Delete document"
-            >
-              ✕
-            </button>
+            <div class="doc-actions">
+              <button
+                class="btn btn-sm btn-danger"
+                @click.stop="store.removeDocument(doc.id)"
+                title="Delete document"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -102,7 +99,8 @@ async function handleDrop(event: DragEvent) {
 @use '../styles/variables' as *;
 
 .ingestion-view {
-  max-width: 900px;
+  max-width: 1200px;
+  height: 100%;
   margin: 0 auto;
   padding: 32px 24px;
   display: flex;
@@ -111,6 +109,7 @@ async function handleDrop(event: DragEvent) {
 }
 
 .ingestion-header {
+  text-align: center;
   h2 {
     font-size: 22px;
     font-weight: 700;
@@ -122,18 +121,26 @@ async function handleDrop(event: DragEvent) {
   }
 }
 
+.content{
+  display: grid;
+  grid-template-columns: 50% 50%;
+}
+
+.drop-section{
+  border-right: solid 1px #000000;
+}
+
 .dropzone {
-  background-color: rgba(0, 0, 0, 0.2);
   border: 2px dashed $color-border;
   border-radius: $radius-lg;
   padding: 48px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin:50px;
 
   &:hover, &.dragging {
     border-color: $color-primary;
-    background-color: rgba(56, 189, 248, 0.05);
   }
 
   .drop-icon {
@@ -155,6 +162,7 @@ async function handleDrop(event: DragEvent) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin:50px;
 
   h3 {
     font-size: 16px;
@@ -165,7 +173,7 @@ async function handleDrop(event: DragEvent) {
 .doc-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+
 }
 
 .doc-card {
@@ -174,8 +182,7 @@ async function handleDrop(event: DragEvent) {
   align-items: center;
   padding: 14px 18px;
   background-color: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-md;
+  border-bottom: 1px solid $color-border;
   cursor: pointer;
   transition: all 0.15s ease;
 }

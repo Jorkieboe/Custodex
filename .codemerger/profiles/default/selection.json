@@ -190,5 +190,8 @@
   },
   {
     "path": "tests/frontend/components_views.test.ts"
+  },
+  {
+    "path": "frontend/components/canvas/HeaderOutlineLegend.vue"
   }
 ]

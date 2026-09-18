@@ -110,4 +110,26 @@ describe('Workspace Pinia Store', () => {
     expect(store.nodes[0].text_content).toBe('Updated text with\n\nnew line')
     expect(store.nodes[0].embedding_status).toBe('stale')
   })
+
+  it('scrolls to node by matching DOM id and adds highlight class', () => {
+    const store = useWorkspaceStore()
+    const container = document.createElement('div')
+    container.className = 'canvas-scroll-container'
+    container.scrollTo = vi.fn()
+
+    const nodeEl = document.createElement('div')
+    nodeEl.id = 'node-header_target'
+    nodeEl.scrollIntoView = vi.fn()
+
+    container.appendChild(nodeEl)
+    document.body.appendChild(container)
+
+    store.scrollToNode('header_target')
+
+    expect(store.activeNodeId).toBe('header_target')
+    expect(container.scrollTo).toHaveBeenCalled()
+    expect(nodeEl.classList.contains('node-highlight-jump')).toBe(true)
+
+    document.body.removeChild(container)
+  })
 })

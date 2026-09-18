@@ -63,8 +63,8 @@ const counts = computed(() => store.currentEmbeddingCounts)
 
 .step-navigator {
   height: $header-height;
-  background-color: $color-surface;
-  border-bottom: 1px solid $color-border;
+  background-color: #d6932f;
+  border-bottom: 1px solid #b87b1e;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -82,15 +82,15 @@ const counts = computed(() => store.currentEmbeddingCounts)
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  font-weight: 600;
-  color: $color-text-primary;
-  padding: 6px 10px;
+  font-weight: 700;
+  color: #1e1b18;
+  padding: 6px 12px;
   border-radius: $radius-md;
-  background-color: transparent;
+  background-color: rgba(0, 0, 0, 0.08);
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: $color-surface-hover;
+    background-color: rgba(0, 0, 0, 0.15);
   }
 
   .project-name {
@@ -104,18 +104,19 @@ const counts = computed(() => store.currentEmbeddingCounts)
 .steps-list {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .step-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  border-radius: $radius-md;
-  color: $color-text-secondary;
+  padding: 6px 16px;
+  border-radius: 999px;
+  color: #3b280c;
+  background-color: rgba(0, 0, 0, 0.08);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.15s ease;
 
   .step-num {
@@ -125,23 +126,24 @@ const counts = computed(() => store.currentEmbeddingCounts)
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(0, 0, 0, 0.15);
     font-size: 11px;
     font-weight: 700;
   }
 
   &:hover {
-    color: $color-text-primary;
-    background-color: rgba(255, 255, 255, 0.04);
+    color: #110e08;
+    background-color: rgba(0, 0, 0, 0.14);
   }
 
   &.active {
-    color: $color-primary;
-    background-color: rgba(56, 189, 248, 0.1);
+    color: #1e1b18;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
     .step-num {
-      background-color: $color-primary;
-      color: #000;
+      background-color: #E8A643;
+      color: #ffffff;
     }
   }
 }
@@ -170,12 +172,16 @@ const counts = computed(() => store.currentEmbeddingCounts)
 
 .settings-btn {
   font-size: 13px;
-  color: $color-text-secondary;
-  padding: 6px 10px;
+  font-weight: 600;
+  color: #2c1e08;
+  padding: 6px 12px;
   border-radius: $radius-md;
+  background-color: rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
+
   &:hover {
-    color: $color-text-primary;
-    background-color: $color-surface-hover;
+    color: #000;
+    background-color: rgba(0, 0, 0, 0.15);
   }
 }
 </style>
