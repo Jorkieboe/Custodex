@@ -22,6 +22,7 @@
     "backend/services/hierarchy_service.py",
     "backend/services/project_manager.py",
     "frontend/App.vue",
+    "frontend/components/ActionBar.vue",
     "frontend/components/ProjectHub.vue",
     "frontend/components/SettingsModal.vue",
     "frontend/components/StepNavigator.vue",

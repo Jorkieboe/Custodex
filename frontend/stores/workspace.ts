@@ -56,6 +56,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const autoSplitMinTokens = ref<number>(200)
   const autoSplitMaxTokens = ref<number>(350)
   const autoSplitPreset = ref<'fine' | 'standard' | 'large' | 'custom'>('standard')
+  const metadataForceOverwrite = ref<boolean>(false)
   let sseEventSource: EventSource | null = null
   let embeddingEventSource: EventSource | null = null
 
@@ -341,6 +342,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     nodesWithMetadata,
     isGeneratingSingle,
     generateMetadataForNode,
+    metadataForceOverwrite,
     startAutogeneration,
     cancelAutogeneration,
     loadProjectMetadataOverview,
@@ -613,7 +615,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
   }
 
-  function startAutogeneration(options: { force_overwrite?: boolean; resume?: boolean } = {}) {
+  function startAutogeneration(options: { force_overwrite?: boolean; resume?: boolean; node_ids?: string[] } = {}) {
     if (!currentProject.value) return
 
     if (sseEventSource) {
@@ -621,7 +623,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       sseEventSource = null
     }
 
-    const totalParagraphs = nodes.value.filter((n: NodeItem) => n.node_type === 'paragraph').length
+    const targetNodeIds = options.node_ids && options.node_ids.length > 0 ? options.node_ids : null
+    const totalParagraphs = targetNodeIds
+      ? targetNodeIds.length
+      : nodes.value.filter((n: NodeItem) => n.node_type === 'paragraph').length
+
     metadataJobStatus.value = {
       status: 'running',
       completed_partitions: 0,
@@ -632,7 +638,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
 
     const baseUrl = apiClient.defaults.baseURL || 'http://localhost:8000'
-    const sseUrl = `${baseUrl}/api/projects/${currentProject.value.id}/metadata/stream?force_overwrite=${Boolean(options.force_overwrite)}`
+    const isForce = options.force_overwrite !== undefined ? options.force_overwrite : metadataForceOverwrite.value
+    let sseUrl = `${baseUrl}/api/projects/${currentProject.value.id}/metadata/stream?force_overwrite=${Boolean(isForce)}`
+    if (targetNodeIds) {
+      sseUrl += `&node_ids=${encodeURIComponent(targetNodeIds.join(','))}`
+    }
 
     console.log(`[Custodex SSE] Initiating EventSource connection to: ${sseUrl}`)
     console.log('[Custodex SSE] Current project:', currentProject.value)

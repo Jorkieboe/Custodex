@@ -417,8 +417,12 @@ async def start_metadata_generation(project_id: str, payload: StartMetadataJobPa
     }
 
 @router.get("/metadata/stream")
-async def stream_metadata_generation(project_id: str, force_overwrite: bool = Query(default=False)):
-    logger.info(">>> [SSE ROUTE ENTER] GET /metadata/stream received for project_id=%s, force_overwrite=%s", project_id, force_overwrite)
+async def stream_metadata_generation(
+    project_id: str,
+    force_overwrite: bool = Query(default=False),
+    node_ids: Optional[str] = Query(default=None),
+):
+    logger.info(">>> [SSE ROUTE ENTER] GET /metadata/stream received for project_id=%s, force_overwrite=%s, node_ids=%s", project_id, force_overwrite, node_ids)
 
     conn = get_project_connection(project_id)
     cursor = conn.cursor()
@@ -428,16 +432,22 @@ async def stream_metadata_generation(project_id: str, force_overwrite: bool = Qu
     model_name = proj_row["llm_model"] if proj_row else "gtp-4.1-mini"
     logger.info("[SSE ROUTE] Project LLM Model from DB: '%s'", model_name)
 
-    cursor.execute(
-        """
+    query = """
         SELECT n.id, n.text_content, d.filename
         FROM nodes n
         JOIN documents d ON n.document_id = d.id
         WHERE d.project_id = ? AND n.node_type = 'paragraph'
-        ORDER BY d.order_index ASC, n.order_index ASC;
-        """,
-        (project_id,),
-    )
+    """
+    params: list = [project_id]
+    if node_ids:
+        id_list = [x.strip() for x in node_ids.split(",") if x.strip()]
+        if id_list:
+            placeholders = ",".join("?" for _ in id_list)
+            query += f" AND n.id IN ({placeholders})"
+            params.extend(id_list)
+    query += " ORDER BY d.order_index ASC, n.order_index ASC;"
+
+    cursor.execute(query, params)
     nodes_to_process = cursor.fetchall()
     logger.info("[SSE ROUTE] Total paragraph chunks to process: %d", len(nodes_to_process))
 

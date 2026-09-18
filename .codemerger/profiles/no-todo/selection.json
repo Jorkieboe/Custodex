@@ -286,5 +286,8 @@
   },
   {
     "path": "frontend/views/05_ExportView.vue"
+  },
+  {
+    "path": "frontend/components/ActionBar.vue"
   }
 ]

@@ -5,23 +5,11 @@ import { useWorkspaceStore } from '../stores/workspace.ts'
 import HeaderNodeView from '../components/canvas/HeaderNodeView.vue'
 import ChunkNodeView from '../components/canvas/ChunkNodeView.vue'
 import HeaderOutlineLegend from '../components/canvas/HeaderOutlineLegend.vue'
+import ActionBar from '../components/ActionBar.vue'
 
 const store = useWorkspaceStore()
 
-const isAutoSplitting = ref(false)
 const floatingToolbarVisible = ref(false)
-const showBudgetPopup = ref(false)
-
-async function handleBatchAutoSplit() {
-  if (store.selectedNodeIds.size === 0) return
-  isAutoSplitting.value = true
-  try {
-    const nodeIds = Array.from(store.selectedNodeIds)
-    await store.requestSemanticSplitPreview(nodeIds)
-  } finally {
-    isAutoSplitting.value = false
-  }
-}
 const floatingToolbarPos = ref({ x: 0, y: 0 })
 const activeSelection = ref<{
   nodeId: string
@@ -60,7 +48,6 @@ function clearSelection() {
 
 function handleWrapperClick() {
   clearSelection()
-  showBudgetPopup.value = false
 }
 
 async function handleMakeHeader() {
@@ -93,129 +80,8 @@ function canMerge(index: number): boolean {
 
 <template>
   <div class="chunk-canvas-wrapper" @click="handleWrapperClick">
-    <!-- Multi-Chunk Selection Toolbar -->
-    <div v-if="store.nodes.length > 0" class="selection-action-bar">
-      <div class="selection-left">
-        <label class="select-all-label">
-          <input
-            type="checkbox"
-            :checked="store.selectedNodeIds.size === store.nodes.length && store.nodes.length > 0"
-            @change="$event => ($event.target as HTMLInputElement).checked ? store.selectAllNodes() : store.clearNodeSelection()"
-          />
-          <span>Select All ({{ store.selectedNodeIds.size }} / {{ store.nodes.length }})</span>
-        </label>
-
-        <div v-if="store.selectedNodeIds.size > 0" class="batch-buttons">
-          <button
-            class="btn btn-sm btn-primary"
-            :disabled="isAutoSplitting"
-            @click="handleBatchAutoSplit"
-          >
-            {{ isAutoSplitting ? 'Analyzing...' : `⚡ Auto-Split (${store.selectedNodeIds.size})` }}
-          </button>
-          <button class="btn btn-sm btn-secondary" @click="store.clearNodeSelection">
-            Deselect
-          </button>
-        </div>
-
-        <div v-if="store.semanticSplitProposals.size > 0" class="proposals-toolbar-group">
-          <span class="proposals-indicator">
-            ⚡ {{ store.semanticSplitProposals.size }} chunk(s) have proposed splits
-          </span>
-          <button class="btn btn-sm btn-success" @click="store.acceptAllProposedSplits">
-            ✓ Accept All Proposed Splits
-          </button>
-          <button class="btn btn-sm btn-secondary" @click="store.semanticSplitProposals.clear()">
-            Dismiss Previews
-          </button>
-        </div>
-      </div>
-
-      <!-- Right Side: Token Budget Pop-up Button -->
-      <div v-if="store.currentStep == 'chunks'" class="selection-right">
-        <div class="budget-popup-anchor">
-          <button
-            type="button"
-            class="btn-selected-range"
-            @click.stop="showBudgetPopup = !showBudgetPopup"
-            title="Configure token range for auto-splitting"
-          >
-            <span>Selected Range: {{ store.autoSplitMinTokens }}–{{ store.autoSplitMaxTokens }} tok</span>
-            <span class="range-chevron">{{ showBudgetPopup ? '▲' : '▼' }}</span>
-          </button>
-
-          <!-- Budget Pop-up Card -->
-          <div
-            v-if="showBudgetPopup"
-            class="budget-popup-card"
-            @click.stop
-          >
-            <div class="popup-header">
-              <span class="popup-title">⚡ Chunk Token Budget</span>
-              <button class="btn-close-popup" @click="showBudgetPopup = false">✕</button>
-            </div>
-
-            <div class="popup-section">
-              <span class="section-label">Presets</span>
-              <div class="preset-buttons">
-                <button
-                  type="button"
-                  class="btn-preset"
-                  :class="{ active: store.autoSplitPreset === 'fine' }"
-                  @click="store.setAutoSplitRange(100, 150, 'fine')"
-                >
-                  100–150 tok
-                </button>
-                <button
-                  type="button"
-                  class="btn-preset"
-                  :class="{ active: store.autoSplitPreset === 'standard' }"
-                  @click="store.setAutoSplitRange(200, 350, 'standard')"
-                >
-                  200–350 tok
-                </button>
-                <button
-                  type="button"
-                  class="btn-preset"
-                  :class="{ active: store.autoSplitPreset === 'large' }"
-                  @click="store.setAutoSplitRange(400, 500, 'large')"
-                >
-                  400–500 tok
-                </button>
-              </div>
-            </div>
-
-            <div class="popup-section">
-              <span class="section-label">Custom Range</span>
-              <div class="custom-token-inputs">
-                <label>
-                  Min:
-                  <input
-                    type="number"
-                    v-model.number="store.autoSplitMinTokens"
-                    min="20"
-                    max="1500"
-                    step="10"
-                    @input="store.autoSplitPreset = 'custom'"
-                  />
-                </label>
-                <label>
-                  Max:
-                  <input
-                    type="number"
-                    v-model.number="store.autoSplitMaxTokens"
-                    min="50"
-                    max="2500"
-                    step="10"
-                    @input="store.autoSplitPreset = 'custom'"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Context-Aware Selection Action Bar -->
+    <ActionBar />
 
     <!-- Visual Canvas Content with Side Legend: 20% headeroutline, 60% chunks, 20% empty panel -->
     <div class="canvas-main-area">

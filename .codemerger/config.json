@@ -39,6 +39,7 @@
     "concept.md",
     "config.json",
     "frontend/App.vue",
+    "frontend/components/ActionBar.vue",
     "frontend/components/ProjectHub.vue",
     "frontend/components/SettingsModal.vue",
     "frontend/components/StepNavigator.vue",

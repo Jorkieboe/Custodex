@@ -31,6 +31,10 @@ const activeProposal = computed(() => store.semanticSplitProposals.get(props.nod
 const isAnalyzing = ref(false)
 const noSplitsNotice = ref(false)
 
+function handleContainerClick() {
+  store.selectNode(props.node.id)
+}
+
 const estimatedTokens = computed(() => {
   const text = props.node.text_content || ''
   if (!text.trim()) return 0
@@ -346,17 +350,19 @@ function handleSegmentMouseUp(idx: number) {
 
     <div
       class="chunk-node-container"
-     :class="{
+      :class="{
         selected: isSelected,
+        active: store.activeNodeId === node.id,
         [`status-${node.embedding_status}`]: showEmbeddingStatus
       }"
-      >
+      @click="handleContainerClick"
+    >
       <!-- Absolute action buttons toolbar on the node -->
       <!-- Embedding status pill if in embeddings view -->
       <!-- <span
-        
+
         class="status-pill status-pill-absolute"
-        
+
       >
         <span class="status-dot"></span>
         {{ node.embedding_status.toUpperCase() }}
@@ -386,10 +392,28 @@ function handleSegmentMouseUp(idx: number) {
           {{ isAnalyzing ? 'Analyzing...' : '⚡ Auto-Split' }}
         </button>
       </div>
+      <div class="chunk-actions-absolute" v-else-if="store.currentStep === 'metadata'">
+        <button
+          class="btn-action-pill btn-meta-generate"
+          :disabled="store.isGeneratingSingle === node.id"
+          @click.stop="store.generateMetadataForNode(node.id)"
+          :title="store.nodesWithMetadata.has(node.id) ? 'Regenerate metadata for this chunk' : 'Generate metadata for this chunk'"
+        >
+          {{ store.isGeneratingSingle === node.id ? 'Generating...' : (store.nodesWithMetadata.has(node.id) ? 'Regenerate ↻' : 'Generate ✨') }}
+        </button>
+      </div>
 
       <!-- Token count visible only on hover -->
       <div class="chunk-hover-token-badge">
         {{ estimatedTokens }} tokens
+      </div>
+
+      <!-- Metadata extraction status badge if in metadata view -->
+      <div
+        v-if="store.currentStep === 'metadata' && store.nodesWithMetadata.has(node.id)"
+        class="chunk-metadata-extracted-badge"
+      >
+        ✓ Extracted
       </div>
 
       <!-- Feedback banner when no splits found -->
@@ -510,7 +534,7 @@ function handleSegmentMouseUp(idx: number) {
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   position: relative;
 }
 
@@ -526,7 +550,7 @@ function handleSegmentMouseUp(idx: number) {
   //   justify-content: center;
   //   align-items: center;
   // }
-  
+
 }
 
 .chunk-outside-checkbox {
@@ -544,38 +568,36 @@ function handleSegmentMouseUp(idx: number) {
   transition: all 10.15s ease;
   border: 1px solid transparent;
 
-  
-
     &.status-current{
-      background: linear-gradient( 
+      background: linear-gradient(
       to right,
       $color-status-current,
-      $color-status-current 5px, 
+      $color-status-current 5px,
       rgba(67, 75, 232, 0.2) 5px,
         rgba(67, 75, 232, 0.2) 100%,
-    
+
     );
     }
 
     &.status-stale{
-      background: linear-gradient( 
+      background: linear-gradient(
       to right,
       $color-status-stale,
       $color-status-stale 5px,
       rgba(67, 75, 232, 0.2) 5px,
         rgba(67, 75, 232, 0.2) 100%,
-    
+
     );
     }
 
     &.status-missing{
-      background: linear-gradient( 
+      background: linear-gradient(
       to right,
       $color-status-missing,
       $color-status-missing 5px,
       rgba(67, 75, 232, 0.2) 5px,
         rgba(67, 75, 232, 0.2) 100%,
-    
+
     );
   }
 
@@ -599,6 +621,30 @@ function handleSegmentMouseUp(idx: number) {
     border-color: #434BE8;
     box-shadow: 0 0 0 2px rgba(67, 75, 232, 0.3);
   }
+
+  &.active {
+    border-color: #E8A643;
+    box-shadow: 0 0 0 2px rgba(232, 166, 67, 0.35);
+  }
+
+  &.selected.active {
+    border-color: #E8A643;
+    box-shadow: 0 0 0 2px rgba(232, 166, 67, 0.5);
+  }
+}
+
+.chunk-metadata-extracted-badge {
+  position: absolute;
+  top: 5px;
+  right: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #065f46;
+  background-color: #a7f3d0;
+  border: 1px solid #6ee7b7;
+  padding: 1px 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  z-index: 10;
 }
 
 .chunk-actions-absolute {

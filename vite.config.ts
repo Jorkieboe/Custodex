@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, './frontend')
+      '@': resolve(__dirname, './frontend'),
+      '@view': resolve(__dirname, './frontend/views')
     }
   },
   server: {

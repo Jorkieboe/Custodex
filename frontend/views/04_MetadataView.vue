@@ -3,10 +3,12 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useWorkspaceStore } from '@/stores/workspace.ts'
 import { type NodeItem, type SchemaField } from '../services/api'
 import HeaderOutlineLegend from '../components/canvas/HeaderOutlineLegend.vue'
+import ActionBar from '../components/ActionBar.vue'
+import HeaderNodeView from '../components/canvas/HeaderNodeView.vue'
+import ChunkNodeView from '../components/canvas/ChunkNodeView.vue'
 
 const store = useWorkspaceStore()
 
-const forceOverwrite = ref(false)
 const fieldValues = ref<Record<string, any>>({})
 let saveTimeouts: Record<string, ReturnType<typeof setTimeout>> = {}
 
@@ -25,29 +27,22 @@ const paragraphNodes = computed<NodeItem[]>(() => {
   return store.nodes.filter((n: NodeItem) => n.node_type === 'paragraph')
 })
 
-const groupedByHeaders = computed(() => {
-  const groups: { header: NodeItem | null; chunks: NodeItem[] }[] = []
-  let currentHeader: NodeItem | null = null
-  let currentChunks: NodeItem[] = []
-
+const headerChildCounts = computed(() => {
+  const counts: Record<string, number> = {}
   for (const node of store.nodes) {
-    if (node.node_type === 'header') {
-      if (currentHeader !== null || currentChunks.length > 0) {
-        groups.push({ header: currentHeader, chunks: currentChunks })
-      }
-      currentHeader = node
-      currentChunks = []
-    } else {
-      currentChunks.push(node)
+    if (node.node_type === 'paragraph' && node.parent_id) {
+      counts[node.parent_id] = (counts[node.parent_id] || 0) + 1
     }
   }
-
-  if (currentHeader !== null || currentChunks.length > 0) {
-    groups.push({ header: currentHeader, chunks: currentChunks })
-  }
-
-  return groups
+  return counts
 })
+
+function canMerge(index: number): boolean {
+  if (index >= store.nodes.length - 1) return false
+  const current = store.nodes[index]
+  const next = store.nodes[index + 1]
+  return current.node_type === 'paragraph' && next.node_type === 'paragraph'
+}
 
 onMounted(async () => {
   await store.reloadSchema()
@@ -72,10 +67,6 @@ watch(
   { immediate: true, deep: true }
 )
 
-function handleSelectChunk(nodeId: string) {
-  store.selectNode(nodeId)
-}
-
 function handleFieldValueChange(fieldId: string, value: any) {
   fieldValues.value[fieldId] = value
 
@@ -98,11 +89,8 @@ function handleArrayFieldChange(fieldId: string, event: Event) {
   handleFieldValueChange(fieldId, items)
 }
 
-async function handleGenerateForChunk(nodeId: string) {
-  console.log(`[Custodex Metadata] Triggering single chunk generation for node ${nodeId}`)
-  await store.selectNode(nodeId)
-  await store.generateMetadataForNode(nodeId)
-  console.log(`[Custodex Metadata Output] Generated for ${nodeId}:`, fieldValues.value)
+function handleStartAutogeneration() {
+  store.startAutogeneration({ force_overwrite: store.metadataForceOverwrite })
 }
 
 async function handlePrimaryButtonAction() {
@@ -112,73 +100,12 @@ async function handlePrimaryButtonAction() {
   console.log(`[Custodex Metadata Output] Final fields:`, fieldValues.value)
 }
 
-function handleStartAutogeneration() {
-  store.startAutogeneration({ force_overwrite: forceOverwrite.value })
-}
-
-function handleCancelAutogeneration() {
-  store.cancelAutogeneration()
-}
-
-const progressPercentage = computed(() => {
-  const { completed_chunks, total_chunks } = store.metadataJobStatus
-  if (!total_chunks || total_chunks === 0) return 0
-  return Math.min(100, Math.round((completed_chunks / total_chunks) * 100))
-})
 </script>
 
 <template>
   <div class="metadata-view-container">
-    <!-- Top Action Bar: Option to start autogeneration -->
-    <header class="autogeneration-bar">
-      <div class="autogen-left">
-        <div class="title-wrap">
-          <span class="sparkle-icon">✨</span>
-          <span class="bar-title">Metadata Extraction Engine</span>
-        </div>
-
-        <div class="autogen-controls" v-if="store.metadataJobStatus.status !== 'running'">
-          <label class="force-toggle">
-            <input v-model="forceOverwrite" type="checkbox" />
-            <span>Force Overwrite User Edits</span>
-          </label>
-
-          <button class="btn btn-autogen" @click="handleStartAutogeneration">
-            ▶ Start Autogeneration (All Chunks)
-          </button>
-        </div>
-
-        <!-- Real-time SSE Progress Mode -->
-        <div class="sse-progress-panel" v-else>
-          <div class="sse-indicator">
-            <span class="pulse-dot"></span>
-            <span class="status-label">Extracting Metadata via SSE...</span>
-          </div>
-
-          <div class="progress-track">
-            <div class="progress-fill" :style="{ width: `${progressPercentage}%` }"></div>
-          </div>
-
-          <span class="progress-numbers">
-            {{ store.metadataJobStatus.completed_chunks }} / {{ store.metadataJobStatus.total_chunks }} chunks ({{ progressPercentage }}%)
-          </span>
-
-          <span class="partition-badge" v-if="store.metadataJobStatus.total_partitions > 1">
-            Part {{ store.metadataJobStatus.completed_partitions + 1 }} of {{ store.metadataJobStatus.total_partitions }}
-          </span>
-
-          <button class="btn btn-cancel" @click="handleCancelAutogeneration">
-            Stop
-          </button>
-        </div>
-      </div>
-
-      <div class="autogen-right">
-        <span class="stat-pill">
-          Chunks with metadata: {{ store.nodesWithMetadata.size }} / {{ paragraphNodes.length }}
-        </span>
-      </div>
-    </header>
+    <!-- Shared Context-Aware Action Bar -->
+    <ActionBar />
 
     <!-- Error Banner if Batch Job Failed -->
     <div v-if="store.metadataJobStatus.status === 'failed' && store.metadataJobStatus.last_error" class="error-banner">
@@ -199,64 +126,23 @@ const progressPercentage = computed(() => {
           No text chunks available. Ingest documents to populate content.
         </div>
 
-        <div v-else class="grouped-chunks-list">
-          <div
-            v-for="(group, gIdx) in groupedByHeaders"
-            :key="gIdx"
-            class="chunk-group"
-          >
-            <h3
-              v-if="group.header"
-              :id="`node-${group.header.id}`"
-              :data-node-id="group.header.id"
-              class="group-header-title"
-            >
-              {{ group.header.text_content }}
-            </h3>
-
-            <div class="group-items">
-              <div
-                v-for="chunk in group.chunks"
-                :key="chunk.id"
-                :id="`node-${chunk.id}`"
-                :data-node-id="chunk.id"
-                class="chunk-card"
-                :class="{
-                  active: store.activeNodeId === chunk.id,
-                  'has-metadata': store.nodesWithMetadata.has(chunk.id)
-                }"
-                @click="handleSelectChunk(chunk.id)"
-              >
-                <div class="chunk-card-meta">
-                  <span class="chunk-index">#{{ chunk.order_index }}</span>
-                  <span
-                    v-if="store.nodesWithMetadata.has(chunk.id)"
-                    class="badge-has-meta"
-                  >
-                    ✓ Extracted
-                  </span>
-                </div>
-
-                <p class="chunk-text">
-                  {{ chunk.text_content }}
-                </p>
-
-                <!-- Left-part Generate button if chunk has no metadata yet -->
-                <div
-                  v-if="!store.nodesWithMetadata.has(chunk.id)"
-                  class="chunk-generate-action"
-                >
-                  <button
-                    class="btn-chunk-generate"
-                    :disabled="store.isGeneratingSingle === chunk.id"
-                    @click.stop="handleGenerateForChunk(chunk.id)"
-                  >
-                    {{ store.isGeneratingSingle === chunk.id ? 'Generating...' : 'Generate' }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div v-else class="nodes-list">
+          <template v-for="(node, index) in store.nodes" :key="node.id">
+            <HeaderNodeView
+              v-if="node.node_type === 'header'"
+              :node="node"
+              :child-count="headerChildCounts[node.id] || 0"
+              @demote="id => store.demoteNode(id)"
+            />
+            <ChunkNodeView
+              v-else
+              :node="node"
+              :can-merge="canMerge(index)"
+              @split="(id, top, bot) => store.splitNode(id, top, bot)"
+              @merge="id => store.mergeNode(id)"
+              @promote="id => store.promoteNode(id)"
+            />
+          </template>
         </div>
       </div>
 
@@ -586,102 +472,9 @@ const progressPercentage = computed(() => {
   font-size: 14px;
 }
 
-.grouped-chunks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 600px;
-}
-
-.group-header-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: $color-text-primary;
-  margin-bottom: 8px;
-}
-
-.group-items {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.chunk-card {
-  background-color: #dbe4ff;
-  color: #1e293b;
-  border-radius: $radius-md;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: 2px solid transparent;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  &.active {
-    border-color: #f59e0b;
-    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
-  }
-}
-
-.chunk-card-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.chunk-index {
-  font-family: $font-family-mono;
-  font-size: 10px;
-  font-weight: 700;
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: 1px 6px;
-  border-radius: $radius-sm;
-}
-
-.badge-has-meta {
-  font-size: 10px;
-  font-weight: 700;
-  color: #065f46;
-  background-color: #a7f3d0;
-  padding: 1px 6px;
-  border-radius: $radius-sm;
-}
-
-.chunk-text {
-  font-size: 13px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.chunk-generate-action {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-chunk-generate {
-  background-color: #e69138;
-  color: #ffffff;
-  border-radius: $radius-sm;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 12px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-
-  &:hover:not(:disabled) {
-    background-color: darken(#e69138, 8%);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+.nodes-list {
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .right-column {

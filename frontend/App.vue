@@ -54,21 +54,8 @@ function handleBackToHub() {
         <MetadataView v-else-if="store.currentStep === 'metadata'" />
 
         <!-- Step 5: Incremental Embedding Refresh -->
-        <!-- Note: Embedding status indicators become visible on the canvas during this step -->
+        <!-- Note: Embedding status indicators and refresh controls are integrated into ActionBar -->
         <div v-else-if="store.currentStep === 'embeddings'" class="embeddings-step-layout">
-          <div class="embeddings-banner">
-            <div>
-              <h3>Embedding Status & Incremental Refresh</h3>
-              <p>Status indicators are active. Synchronized: {{ store.currentEmbeddingCounts.current }} | Stale: {{ store.currentEmbeddingCounts.stale }} | Missing: {{ store.currentEmbeddingCounts.missing }}</p>
-            </div>
-            <button
-              class="btn btn-primary"
-              :disabled="store.isEmbeddingRefreshing"
-              @click="store.refreshEmbeddingsStream"
-            >
-              {{ store.isEmbeddingRefreshing ? 'Refreshing Embeddings...' : 'Refresh Stale Embeddings' }}
-            </button>
-          </div>
           <ChunkCanvas />
         </div>
 

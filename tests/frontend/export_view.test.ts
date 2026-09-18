@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createApp, h, nextTick } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import { useWorkspaceStore } from '@/stores/workspace'
-import ExportView from '@/components/export/ExportView.vue'
+import ExportView from '@view/05_ExportView.vue'
 import * as api from '@/services/api'
 
 describe('ExportView Component', () => {

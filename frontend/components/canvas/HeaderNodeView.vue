@@ -61,7 +61,6 @@ function handleBlur() {
   >
     <div class="header-bar">
       <div class="header-left">
-        <span class="heading-tag">HEADER</span>
         <div
           ref="headerEditableRef"
           class="header-text-editable"
@@ -92,7 +91,7 @@ function handleBlur() {
 @use '../../styles/variables' as *;
 
 .header-node-container {
-  margin: 18px 0 8px 0;
+  margin: 20px 0 20px 0;
 }
 
 .header-bar {
