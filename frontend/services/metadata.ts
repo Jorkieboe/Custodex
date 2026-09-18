@@ -28,7 +28,7 @@ export async function fetchNodeMetadata(
   const resp = await apiClient.get<ChunkMetadataItem[]>(
     `/api/projects/${projectId}/nodes/${nodeId}/metadata`
   )
-  console.log(`[Custodex API] Loaded metadata for node ${nodeId}:`, resp.data)
+  // console.log(`[Custodex API] Loaded metadata for node ${nodeId}:`, resp.data)
   return resp.data
 }
 

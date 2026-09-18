@@ -445,14 +445,86 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function acceptProposedSplit(nodeId: string, splitIndices?: number[]) {
     if (!currentProject.value) return
     const proposal = semanticSplitProposals.value.get(nodeId)
-    const indices = splitIndices || proposal?.proposed_splits.map(s => s.split_index) || []
+    if (!proposal) return
+
+    const isSingleInlineAccept = splitIndices && splitIndices.length === 1 && proposal.proposed_splits.length > 1
+    const indices = splitIndices || proposal.proposed_splits.map(s => s.split_index)
     if (indices.length === 0) return
+
+    if (isSingleInlineAccept) {
+      const splitIndex = indices[0]
+      const sIdx = proposal.proposed_splits.findIndex(s => s.split_index === splitIndex)
+
+      if (sIdx !== -1) {
+        const affectedNodes = await acceptSemanticSplits(currentProject.value.id, [{ node_id: nodeId, split_indices: [splitIndex] }])
+        nodesWithMetadata.value.delete(nodeId)
+
+        const upperNode = affectedNodes.find(n => n.id === nodeId)
+        const lowerNode = affectedNodes.find(n => n.id !== nodeId)
+
+        if (upperNode && lowerNode) {
+          nodesWithMetadata.value.delete(lowerNode.id)
+
+          // 1. Process upper/left segment (retains original nodeId)
+          if (sIdx === 0) {
+            semanticSplitProposals.value.delete(nodeId)
+          } else {
+            const leftStartInOrig = proposal.original_text.indexOf(upperNode.text_content)
+            const leftOffset = leftStartInOrig >= 0 ? leftStartInOrig : 0
+            const leftSplits = proposal.proposed_splits.slice(0, sIdx).map(sp => ({
+              ...sp,
+              split_index: sp.split_index - leftOffset
+            }))
+            semanticSplitProposals.value.set(nodeId, {
+              ...proposal,
+              node_id: nodeId,
+              original_text: upperNode.text_content,
+              total_tokens: upperNode.text_content.trim().split(/\s+/).length,
+              order_index: upperNode.order_index,
+              proposed_slices: proposal.proposed_slices.slice(0, sIdx + 1),
+              proposed_splits: leftSplits
+            })
+          }
+
+          // 2. Process lower/right segment (newly created node lowerNode.id)
+          const rightSlices = proposal.proposed_slices.slice(sIdx + 1)
+          const rightSplitsRaw = proposal.proposed_splits.slice(sIdx + 1)
+
+          if (rightSplitsRaw.length > 0) {
+            const rightStartInOrig = proposal.original_text.indexOf(lowerNode.text_content, splitIndex >= 0 ? Math.max(0, splitIndex - 20) : 0)
+            const rightOffset = rightStartInOrig >= 0 ? rightStartInOrig : splitIndex
+            const rightSplits = rightSplitsRaw.map(sp => ({
+              ...sp,
+              split_index: sp.split_index - rightOffset
+            }))
+            semanticSplitProposals.value.set(lowerNode.id, {
+              node_id: lowerNode.id,
+              document_id: proposal.document_id,
+              original_text: lowerNode.text_content,
+              total_tokens: lowerNode.text_content.trim().split(/\s+/).length,
+              order_index: lowerNode.order_index,
+              proposed_slices: rightSlices,
+              proposed_splits: rightSplits
+            })
+          }
+        } else {
+          semanticSplitProposals.value.delete(nodeId)
+        }
+
+        if (activeNodeId.value === nodeId) {
+          await loadActiveNodeMetadata(nodeId)
+        }
+        await reloadNodes()
+        return
+      }
+    }
 
     await acceptSemanticSplits(currentProject.value.id, [{ node_id: nodeId, split_indices: indices }])
     nodesWithMetadata.value.delete(nodeId)
     if (activeNodeId.value === nodeId) {
       await loadActiveNodeMetadata(nodeId)
     }
+
     semanticSplitProposals.value.delete(nodeId)
     await reloadNodes()
   }
@@ -477,8 +549,50 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     await reloadNodes()
   }
 
-  function rejectProposedSplit(nodeId: string) {
-    semanticSplitProposals.value.delete(nodeId)
+  function rejectProposedSplit(nodeId: string, splitIndexOrSIdx?: number) {
+    if (splitIndexOrSIdx === undefined) {
+      semanticSplitProposals.value.delete(nodeId)
+      return
+    }
+    const proposal = semanticSplitProposals.value.get(nodeId)
+    if (!proposal) return
+
+    let sIdx = splitIndexOrSIdx
+    if (sIdx >= proposal.proposed_splits.length) {
+      sIdx = proposal.proposed_splits.findIndex(s => s.split_index === splitIndexOrSIdx)
+    }
+    if (sIdx < 0 || sIdx >= proposal.proposed_splits.length) {
+      semanticSplitProposals.value.delete(nodeId)
+      return
+    }
+
+    const sliceA = proposal.proposed_slices[sIdx]
+    const sliceB = proposal.proposed_slices[sIdx + 1]
+    const textA = typeof sliceA === 'object' ? sliceA.text : String(sliceA)
+    const textB = typeof sliceB === 'object' ? sliceB.text : String(sliceB)
+    const tokA = typeof sliceA === 'object' ? sliceA.token_count : Math.round(textA.length / 4)
+    const tokB = typeof sliceB === 'object' ? sliceB.token_count : Math.round(textB.length / 4)
+
+    const mergedSlice = {
+      text: `${textA}\n\n${textB}`,
+      token_count: tokA + tokB
+    }
+
+    const newSlices = [...proposal.proposed_slices]
+    newSlices.splice(sIdx, 2, mergedSlice)
+
+    const newSplits = [...proposal.proposed_splits]
+    newSplits.splice(sIdx, 1)
+
+    if (newSplits.length === 0) {
+      semanticSplitProposals.value.delete(nodeId)
+    } else {
+      semanticSplitProposals.value.set(nodeId, {
+        ...proposal,
+        proposed_slices: newSlices,
+        proposed_splits: newSplits
+      })
+    }
   }
 
   async function validateModelSwitch(newEmbeddingModel: string, confirm: boolean = false) {

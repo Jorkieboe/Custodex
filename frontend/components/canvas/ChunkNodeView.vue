@@ -62,6 +62,10 @@ function handleAcceptInlineSplit(splitIndex: number) {
   store.acceptProposedSplit(props.node.id, [splitIndex])
 }
 
+function handleRejectInlineSplit(sIdx: number) {
+  store.rejectProposedSplit(props.node.id, sIdx)
+}
+
 function parseSegmentsFromText(rawText: string): string[] {
   const parts = rawText.split(/\n\s*\n/)
   return parts.length > 0 ? parts : ['']
@@ -357,17 +361,7 @@ function handleSegmentMouseUp(idx: number) {
       }"
       @click="handleContainerClick"
     >
-      <!-- Absolute action buttons toolbar on the node -->
-      <!-- Embedding status pill if in embeddings view -->
-      <!-- <span
-
-        class="status-pill status-pill-absolute"
-
-      >
-        <span class="status-dot"></span>
-        {{ node.embedding_status.toUpperCase() }}
-      </span> -->
-      <div class="chunk-actions-absolute" v-if="store.currentStep === 'chunks'">
+      <div class="chunk-actions-absolute" v-if="store.currentStep === 'chunks' && !activeProposal">
         <button
           class="btn-action-pill"
           @click="emit('promote', node.id)"
@@ -392,7 +386,7 @@ function handleSegmentMouseUp(idx: number) {
           {{ isAnalyzing ? 'Analyzing...' : '⚡ Auto-Split' }}
         </button>
       </div>
-      <div class="chunk-actions-absolute" v-else-if="store.currentStep === 'metadata'">
+      <div class="chunk-actions-absolute" v-else-if="store.currentStep === 'metadata'  && !activeProposal">
         <button
           class="btn-action-pill btn-meta-generate"
           :disabled="store.isGeneratingSingle === node.id"
@@ -466,7 +460,7 @@ function handleSegmentMouseUp(idx: number) {
                 <button
                   type="button"
                   class="split-pill-btn"
-                  @click="store.rejectProposedSplit(node.id)"
+                  @click="handleRejectInlineSplit(sIdx)"
                 >
                   ✕ Reject
                 </button>
@@ -545,11 +539,6 @@ function handleSegmentMouseUp(idx: number) {
   align-self: center;
 
   width: fit-content;
-
-  // input{
-  //   justify-content: center;
-  //   align-items: center;
-  // }
 
 }
 
