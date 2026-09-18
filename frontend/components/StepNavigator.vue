@@ -37,7 +37,7 @@ const counts = computed(() => store.currentEmbeddingCounts)
         :class="{ active: store.currentStep === step.id }"
         @click="store.setStep(step.id)"
       >
-        <span class="step-num">{{ step.number }}</span>
+      
         <span class="step-label">{{ step.label }}</span>
         <span
           v-if="step.id === 'embeddings' && (counts.stale > 0 || counts.missing > 0)"
@@ -110,14 +110,16 @@ const counts = computed(() => store.currentEmbeddingCounts)
 .step-item {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 6px 16px;
-  border-radius: 0;
-  color: #3b280c;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #fff;
   background-color: rgba(0, 0, 0, 0.08);
   font-size: 13px;
   font-weight: 600;
   transition: all 0.15s ease;
+  width: 128px;
 
   .step-num {
     display: inline-flex;

@@ -268,5 +268,23 @@
   },
   {
     "path": "frontend/components/schema/FieldCard.vue"
+  },
+  {
+    "path": "frontend/components/canvas/HeaderOutlineLegend.vue"
+  },
+  {
+    "path": "frontend/views/02_ChunkCanvas.vue"
+  },
+  {
+    "path": "frontend/views/01_ImportView.vue"
+  },
+  {
+    "path": "frontend/views/03_schemaDesigner.vue"
+  },
+  {
+    "path": "frontend/views/04_MetadataView.vue"
+  },
+  {
+    "path": "frontend/views/05_ExportView.vue"
   }
 ]
